@@ -46,6 +46,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
+#include "Tpetra_Details_computeOffsets.hpp"
+#include "Kokkos_Core.hpp"
 #include <memory>
 #include <string>
 
@@ -70,17 +72,181 @@ class Distributor;
 //
 namespace Details {
 
-template<class LocalSparseMatrixType>
+
+/// \brief Compute number of packets per row of the local matrix
+///
+/// \tparam GO Global ordinal type
+/// \tparam ViewType Type of the Kokkos::View specialization
+///   used to store the number of packets; the output array of this function.
+/// \tparam ExportLIDsViewType Type of the Kokkos::View specialization
+///   used to store the LIDs of local rows; the input array of this function.
+/// \tparam LocalMatrixType Type of the KokkosSparse::CrsMatrix local matrix
+///
+template<class GO, class ViewType, class ExportLIDsViewType, class LocalMatrixType>
+struct NumPacketsFunctor {
+
+  typedef typename ViewType::value_type value_type;
+  typedef typename LocalMatrixType::row_map_type row_map_type;
+  typedef typename LocalMatrixType::value_type IST;
+  typedef typename LocalMatrixType::ordinal_type LO;
+
+  ViewType num_packets;
+  ExportLIDsViewType export_lids;
+  row_map_type row_map;
+
+  NumPacketsFunctor(ViewType num_packets_, ExportLIDsViewType export_lids_,
+      LocalMatrixType local_matrix):
+    num_packets(num_packets_), export_lids(export_lids_),
+    row_map(local_matrix.graph.row_map) {};
+
+  KOKKOS_INLINE_FUNCTION
+    void operator() (size_t i) const {
+      LO export_lid = static_cast<LO>(export_lids[i]);
+      const size_t count = static_cast<size_t>(row_map[export_lid+1]
+                                             - row_map[export_lid]);
+      const value_type num_bytes = sizeof(LO) + count * (sizeof(IST) + sizeof(GO));
+      num_packets[i] = (count == 0) ? 0 : num_bytes;
+    }
+};
+
+/// \brief Reduction result for PackCrsMatrixFunctor below.
+///
+/// The reduction result finds the offset and number of bytes associated with
+/// the first out of bounds error or packing error occurs.
+struct PackCrsMatrixError {
+
+  size_t bad_index; // only valid if outOfBounds == true.
+  size_t bad_offset;   // only valid if outOfBounds == true.
+  size_t bad_num_bytes; // only valid if outOfBounds == true.
+  bool out_of_bounds_error;
+  bool packing_error;
+
+  PackCrsMatrixError():
+    bad_index(std::numeric_limits<size_t>::max()),
+    bad_offset(0),
+    bad_num_bytes(0),
+    out_of_bounds_error(false),
+    packing_error(false) {}
+
+  KOKKOS_INLINE_FUNCTION bool success() const
+  {
+    return ((!out_of_bounds_error) && (!packing_error));
+  }
+
+  KOKKOS_INLINE_FUNCTION std::string summary() const
+  {
+    std::ostringstream os;
+    os << "firstBadIndex: " << bad_index
+       << ", firstBadOffset: " << bad_offset
+       << ", firstBadNumBytes: " << bad_num_bytes
+       << ", outOfBounds: " << (out_of_bounds_error ? "true" : "false");
+    return os.str();
+  }
+};
+
+template<class ViewType, class OffsetsViewType,
+         class ExportsViewType, class ExportLIDsViewType,
+         class LocalMatrixType, class LocalMapType>
+struct PackCrsMatrixFunctor {
+
+  typedef typename LocalMapType::local_ordinal_type LO;
+  typedef typename LocalMapType::global_ordinal_type GO;
+  typedef typename LocalMatrixType::value_type IST;
+  typedef PackCrsMatrixError value_type;
+
+  static_assert (std::is_same<LO, typename LocalMatrixType::ordinal_type>::value,
+                 "LocalMapType::local_ordinal_type and "
+                 "LocalMatrixType::ordinal_type must be the same.");
+
+  ViewType num_packets_per_lid;
+  OffsetsViewType offsets;
+  ExportsViewType exports;
+  ExportLIDsViewType export_lids;
+  LocalMatrixType local_matrix;
+  LocalMapType local_col_map;
+
+  PackCrsMatrixFunctor(ViewType num_packets_per_lid_, OffsetsViewType offsets_,
+      ExportsViewType exports_, ExportLIDsViewType export_lids_,
+      LocalMatrixType local_matrix_, LocalMapType local_col_map_):
+    num_packets_per_lid(num_packets_per_lid_), offsets(offsets_),
+    exports(exports_), export_lids(export_lids_), local_matrix(local_matrix_),
+    local_col_map(local_col_map_)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void init(value_type& dst) const
+  {
+    dst.bad_index = std::numeric_limits<size_t>::max();
+    dst.bad_offset = 0;
+    dst.bad_num_bytes = 0;
+    dst.out_of_bounds_error = false;
+    dst.packing_error = false;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst, const volatile value_type& src) const
+  {
+    if (src.bad_index < dst.bad_index) {
+      dst.bad_index = src.bad_index;
+      dst.bad_offset = src.bad_offset;
+      dst.bad_num_bytes = src.bad_num_bytes;
+      dst.out_of_bounds_error = src.out_of_bounds_error;
+      dst.packing_error = src.packing_error;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(LO i, value_type& dst) const
+  {
+    const LO export_lid = export_lids[i];
+    const size_t buf_size = exports.size();
+
+    // FIXME (mfh 24 Mar 2017) Everything here assumes UVM.  If
+    // we want to fix that, we need to write a pack kernel for
+    // the whole matrix, that runs on device.
+    size_t num_ent = static_cast<size_t>(local_matrix.graph.row_map[export_lid+1]
+                                       - local_matrix.graph.row_map[export_lid]);
+
+    // Only pack this row's data if it has a nonzero number of
+    // entries.  We can do this because receiving processes get the
+    // number of packets, and will know that zero packets means zero
+    // entries.
+
+    if (num_ent != 0) {
+
+      char* const num_ent_beg = exports.ptr_on_device() + offsets(i);
+      char* const num_ent_end = num_ent_beg + sizeof (LO);
+      char* const val_beg = num_ent_end;
+      char* const val_end = val_beg + num_ent * sizeof (IST);
+      char* const ind_beg = val_end;
+      const size_t num_bytes = num_packets_per_lid(i);
+
+      if ((offsets(i) > buf_size || offsets(i) + num_bytes > buf_size)) {
+        dst.out_of_bounds_error = true;
+      }
+      else {
+        dst.packing_error = ! packCrsMatrixRow(local_matrix, local_col_map,
+            num_ent_beg, val_beg, ind_beg, num_ent, export_lid);
+      }
+      if (dst.out_of_bounds_error || dst.packing_error) {
+        dst.bad_index = i;
+        dst.bad_offset = offsets(i);
+        dst.bad_num_bytes = num_bytes;
+      }
+    }
+  }
+};
+
+template<class LocalMatrixType>
 bool
-crsMatrixAllocatePackSpace (const LocalSparseMatrixType& lclMatrix,
+crsMatrixAllocatePackSpace (const LocalMatrixType& lclMatrix,
                             std::unique_ptr<std::string>& errStr,
                             Teuchos::Array<char>& exports,
                             size_t& totalNumEntries,
-                            const Teuchos::ArrayView<const typename LocalSparseMatrixType::ordinal_type>& exportLIDs,
+                            const Teuchos::ArrayView<const typename LocalMatrixType::ordinal_type>& exportLIDs,
                             const size_t sizeOfGlobalOrdinal)
 {
-  typedef typename LocalSparseMatrixType::ordinal_type LO;
-  typedef typename LocalSparseMatrixType::value_type IST;
+  typedef typename LocalMatrixType::ordinal_type LO;
+  typedef typename LocalMatrixType::value_type IST;
 
   // The number of export LIDs must fit in LocalOrdinal, assuming
   // that the LIDs are distinct and valid on the calling process.
@@ -134,18 +300,30 @@ crsMatrixAllocatePackSpace (const LocalSparseMatrixType& lclMatrix,
   return true;
 }
 
-template<class LocalSparseMatrixType, class LocalMapType>
+/// \brief Packs a single row of the CrsMatrix.
+///
+/// Data (bytes) describing the row of the CRS matrix are "packed"
+/// (concatenated) in to a single char* as
+///
+///   LO number of entries  \
+///   GO column indices      > -- number of entries | column indices | values --
+///   SC values             /
+///
+/// \tparam LocalMatrixType the specialization of the KokkosSparse::CrsMatrix
+///   local matrix
+/// \tparam LocalMapType the type of the local column map
+template<class LocalMatrixType, class LocalMapType>
 bool
-packCrsMatrixRow (const LocalSparseMatrixType& lclMatrix,
+packCrsMatrixRow (const LocalMatrixType& lclMatrix,
                   const LocalMapType& lclColMap,
                   char* const numEntOut,
                   char* const valOut,
                   char* const indOut,
-                  const size_t numEnt,
-                  const typename LocalSparseMatrixType::ordinal_type lclRow)
+                  const size_t numEnt, // number of entries in row
+                  const typename LocalMatrixType::ordinal_type lclRow)
 {
   using Kokkos::subview;
-  typedef LocalSparseMatrixType local_matrix_type;
+  typedef LocalMatrixType local_matrix_type;
   typedef LocalMapType local_map_type;
   typedef typename local_matrix_type::value_type IST;
   typedef typename local_matrix_type::ordinal_type LO;
@@ -231,25 +409,30 @@ packCrsMatrixRow (const LocalSparseMatrixType& lclMatrix,
 ///   false.  This is purely local to the process that discovered the
 ///   error.  The caller is responsible for synchronizing across
 ///   processes.
-template<class LocalSparseMatrixType, class LocalMapType>
+template<class LocalMatrixType, class LocalMapType>
 bool
-packCrsMatrix (const LocalSparseMatrixType& lclMatrix,
-               const LocalMapType lclColMap,
+packCrsMatrix (const LocalMatrixType& lclMatrix,
+               const LocalMapType& lclColMap,
                std::unique_ptr<std::string>& errStr,
                Teuchos::Array<char>& exports,
                const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                size_t& constantNumPackets,
-               const Teuchos::ArrayView<const typename LocalSparseMatrixType::ordinal_type>& exportLIDs,
+               const Teuchos::ArrayView<const typename LocalMatrixType::ordinal_type>& exportLIDs,
                const int myRank,
                Distributor& /* dist */)
 {
-  typedef LocalSparseMatrixType local_matrix_type;
+  using Kokkos::View;
+  using Kokkos::HostSpace;
+  using Kokkos::MemoryUnmanaged;
+  using ::Tpetra::Details::computeOffsetsFromCounts;
+  typedef LocalMatrixType local_matrix_type;
+  typedef LocalMapType local_map_type;
   typedef typename LocalMapType::local_ordinal_type LO;
   typedef typename LocalMapType::global_ordinal_type GO;
-  typedef typename local_matrix_type::value_type IST;
-  static_assert (std::is_same<LO, typename LocalSparseMatrixType::ordinal_type>::value,
+
+  static_assert (std::is_same<LO, typename LocalMatrixType::ordinal_type>::value,
                  "LocalMapType::local_ordinal_type and "
-                 "LocalSparseMatrixType::ordinal_type must be the same.");
+                 "LocalMatrixType::ordinal_type must be the same.");
 
   const size_t numExportLIDs = static_cast<size_t> (exportLIDs.size ());
   if (numExportLIDs != static_cast<size_t> (numPacketsPerLID.size ())) {
@@ -287,92 +470,51 @@ packCrsMatrix (const LocalSparseMatrixType& lclMatrix,
     }
     return false;
   }
-  const size_t bufSize = static_cast<size_t> (exports.size ());
 
-  // Compute the number of "packets" (in this case, bytes) per
-  // export LID (in this case, local index of the row to send), and
-  // actually pack the data.
-  //
-  // FIXME (mfh 24 Feb 2013, 25 Jan 2015) This code is only correct
-  // if sizeof(Scalar) is a meaningful representation of the amount
-  // of data in a Scalar instance.  (LO and GO are always built-in
-  // integer types.)
+  // Get the number of packets on each row.
+  typedef size_t count_type;
+  typedef View<const LO*, HostSpace, MemoryUnmanaged> LIVT;  // Local indices view type
+  typedef View<count_type*, HostSpace, MemoryUnmanaged> CVT; // Counts view type
+  typedef View<char*, HostSpace, MemoryUnmanaged> EXVT; // Exports view type
+  // @mfh: Is this the right device type?
+  typedef typename local_matrix_type::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, LO> range_type;
 
-  // Variables for error reporting in the loop.
-  size_t firstBadIndex = 0; // only valid if outOfBounds == true.
-  size_t firstBadOffset = 0;   // only valid if outOfBounds == true.
-  size_t firstBadNumBytes = 0; // only valid if outOfBounds == true.
-  bool outOfBounds = false;
-  bool packErr = false;
+  CVT num_packets_per_lid(numPacketsPerLID.getRawPtr(), numPacketsPerLID.size());
+  LIVT export_lids(exportLIDs.getRawPtr(), exportLIDs.size());
+  EXVT exports_v(exports.getRawPtr(), exports.size());
 
-  char* const exportsRawPtr = exports.getRawPtr ();
-  size_t offset = 0; // current index into 'exports' array.
+  typedef NumPacketsFunctor<GO, CVT, LIVT, local_matrix_type> np_functor_type;
+  np_functor_type np_functor(num_packets_per_lid, export_lids, lclMatrix);
+  Kokkos::parallel_for(range_type(0, numExportLIDs), np_functor);
 
-  // Since the graph is static, we can go straight to lclMatrix
-  // for the data.  This makes packing faster, and also makes
-  // thread-parallel packing possible: see #800.
-  for (size_t i = 0; i < numExportLIDs; ++i) {
-    const LO lclRow = exportLIDs[i];
+  // Now get the offsets
+  typedef size_t offset_type;
+  typedef View<offset_type*, HostSpace> OVT; // Offsets view type
+  OVT offsets("packCrsMatrix: offsets", numExportLIDs+1);
+  computeOffsetsFromCounts(offsets, num_packets_per_lid);
 
-    // FIXME (mfh 24 Mar 2017) Everything here assumes UVM.  If
-    // we want to fix that, we need to write a pack kernel for
-    // the whole matrix, that runs on device.
-    size_t numEnt = static_cast<size_t> (lclMatrix.graph.row_map[lclRow+1] -
-                                         lclMatrix.graph.row_map[lclRow]);
+  // Now do the actual pack!
+  typedef PackCrsMatrixFunctor<CVT, OVT, EXVT, LIVT,
+          local_matrix_type, local_map_type> pack_functor_type;
+  typename pack_functor_type::value_type result;
+  pack_functor_type pack_functor(num_packets_per_lid, offsets, exports_v,
+      export_lids, lclMatrix, lclColMap);
+  Kokkos::parallel_reduce(range_type(0, numExportLIDs), pack_functor, result);
 
-    // Only pack this row's data if it has a nonzero number of
-    // entries.  We can do this because receiving processes get the
-    // number of packets, and will know that zero packets means zero
-    // entries.
-    if (numEnt == 0) {
-      numPacketsPerLID[i] = 0;
-    }
-    else {
-      char* const numEntBeg = exportsRawPtr + offset;
-      char* const numEntEnd = numEntBeg + sizeof (LO);
-      char* const valBeg = numEntEnd;
-      char* const valEnd = valBeg + numEnt * sizeof (IST);
-      char* const indBeg = valEnd;
-      const size_t numBytes = sizeof(LO) +
-        numEnt * (sizeof (IST) + sizeof (GO));
-      if (offset > bufSize || offset + numBytes > bufSize) {
-        firstBadIndex = i;
-        firstBadOffset = offset;
-        firstBadNumBytes = numBytes;
-        outOfBounds = true;
-        break;
-      }
-
-      packErr = ! packCrsMatrixRow (lclMatrix, lclColMap,
-                                    numEntBeg, valBeg, indBeg, numEnt, lclRow);
-      if (packErr) {
-        firstBadIndex = i;
-        firstBadOffset = offset;
-        firstBadNumBytes = numBytes;
-        break;
-      }
-      // numPacketsPerLID[i] is the number of "packets" in the
-      // current local row i.  Packet=char (really "byte") so use
-      // the number of bytes of the packed data for that row.
-      numPacketsPerLID[i] = numBytes;
-      offset += numBytes;
-    }
-  }
-
-  if (packErr) {
+  if (!result.success()) {
     std::ostringstream os;
     os << "Proc " << myRank << ": packCrsMatrix failed.  "
-       << "firstBadIndex: " << firstBadIndex
-       << ", firstBadOffset: " << firstBadOffset
-       << ", firstBadNumBytes: " << firstBadNumBytes
-       << ", outOfBounds: " << (outOfBounds ? "true" : "false")
+       << result.summary()
        << std::endl;
     if (errStr.get () != NULL) {
       errStr = std::unique_ptr<std::string> (new std::string ());
       *errStr = os.str ();
     }
   }
-  return ! packErr;
+
+  return result.success();
 }
 
 } // namespace Details

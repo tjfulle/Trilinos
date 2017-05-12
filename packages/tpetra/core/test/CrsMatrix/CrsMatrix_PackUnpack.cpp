@@ -40,7 +40,8 @@
 // ************************************************************************
 // @HEADER
 */
-
+#include <algorithm>
+#include <random>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <TpetraCore_ETIHelperMacros.h>
@@ -64,15 +65,6 @@ essentially_equal(T a, T b) {
   return KAT::abs(a - b) <= ( (KAT::abs(a) > KAT::abs(b) ? KAT::abs(b) : KAT::abs(a)) * eps);
 }
 
-// Create a symmetric nxn matrix with structure:
-//
-// [1  2  3  4 ... N]
-// [2  2  3  4 ... N]
-// [3  3  3  4 ... N]
-//       ...
-// [N  N  N  N ... N]
-//
-// with 2 rows per processor
 template<class MatrixType>
 void
 generate_test_matrix(Teuchos::RCP<MatrixType>& A,
@@ -88,21 +80,39 @@ generate_test_matrix(Teuchos::RCP<MatrixType>& A,
   typedef typename MatrixType::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> MapType;
 
-  const int num_row_per_proc = 2;
-  const int world_size = comm->getSize();
   const int world_rank = comm->getRank();
 
-  // Rows 0,1 on P0
-  // Rows 2,3 on P1
-  // ...
-  // Rows n-2,n-1 on PN-1
-  Teuchos::Array<GO> row_gids, col_gids;
+  const int num_row_per_proc = 2;
+  Array<GO> row_gids(num_row_per_proc);
+
   int start = num_row_per_proc * world_rank;
   for (int i=0; i<num_row_per_proc; i++)
-    row_gids.push_back(static_cast<GO>(start+i));
+    row_gids[i] = static_cast<GO>(start+i);
 
-  // All columns on each
-  for (GO i=0; i<num_row_per_proc*world_size; i++) col_gids.push_back(i);
+  // Create random, unique column GIDs.
+  const int num_nz_cols = 100;
+  Array<GO> col_gids(num_nz_cols);
+  GO col_gid = 0;
+  int max_rand_col_gid_attempt = 100;
+  std::random_device rand_dev;
+  std::mt19937 generator(rand_dev());
+  std::uniform_int_distribution<GO>  distr(0, 2000);
+  for (int i=0; i<num_nz_cols; i++) {
+    col_gids[i] = col_gid;
+    int j = 0;
+    while (j<max_rand_col_gid_attempt) {
+      // Make sure that column GIDs are unique
+      col_gid = distr(generator);
+      auto it_beg = col_gids.begin();
+      auto it_end = it_beg + (i + 1);
+      if (std::find(it_beg, it_end, col_gid) == it_end) break;
+      j += 1;
+    }
+    if (j >= max_rand_col_gid_attempt) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "Unable to determine random, unique col GIDs");
+    }
+  }
 
   comm->barrier();
 
@@ -112,20 +122,17 @@ generate_test_matrix(Teuchos::RCP<MatrixType>& A,
 
   comm->barrier();
 
-  size_t count = num_row_per_proc*world_size;
-  A = rcp(new MatrixType(row_map, col_map, count));
+  A = rcp(new MatrixType(row_map, col_map, num_nz_cols));
 
   comm->barrier();
 
-  Array<LO> columns(num_row_per_proc*world_size);
-  Array<SC> entries(num_row_per_proc*world_size);
-  for (int j=0; j<num_row_per_proc*world_size; ++j) columns[j] = j;
+  Array<LO> columns(num_nz_cols);
+  Array<SC> entries(num_nz_cols);
+  for (LO j=0; j<static_cast<LO>(num_nz_cols); ++j) columns[j] = j;
   for (int i=0; i<num_row_per_proc; ++i) {
-    // Symmetric fill
-    int i_gbl = num_row_per_proc*world_rank + i;
-    for (int j=0; j<num_row_per_proc*world_size; ++j) {
-      entries[j] = static_cast<SC>(j <= i_gbl ? i_gbl+1 : j+1);
-    }
+    LO lcl_row = static_cast<LO>(start + i);
+    for (int j=0; j<entries.size(); ++j)
+      entries[j] = static_cast<SC>(j+1);
     A->insertLocalValues(i, columns(), entries());
   }
 
@@ -244,8 +251,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
 
     TEST_ASSERT(A_indices.size() == B_indices.size())
 
-    for (size_t i=0; i<A_indices.size(); i++) {
-      TEST_ASSERT(essentially_equal<SC>(A_values[i], B_values[i]));
+    {
+      int errors = 0;
+      std::ostringstream os;
+      for (int i=0; i<A_indices.size(); i++) {
+        if (!essentially_equal<SC>(A_values[i], B_values[i])) {
+          os << "ERROR: Proc " << world_rank << ", row " << loc_row
+              << ", A[" << i << "]=" << A_values[i] << ", but "
+              <<   "B[" << i << "]=" << B_values[i] << "!\n";
+          errors += 1;
+        }
+      }
+      if (errors) {
+        Tpetra::Details::gathervPrint(out, os.str(), *(col_map->getComm()));
+        TEST_ASSERT(false);
+      }
     }
   }
 
@@ -274,8 +294,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackUnpack, SC, LO, GO, NT)
 
     TEST_ASSERT(A_indices.size() == B_indices.size())
 
-    for (size_t i=0; i<A_indices.size(); i++) {
-      TEST_ASSERT(essentially_equal<SC>(2.*A_values[i], B_values[i]));
+    {
+      int errors = 0;
+      std::ostringstream os;
+      for (int i=0; i<A_indices.size(); i++) {
+        if (!essentially_equal<SC>(2*A_values[i], B_values[i])) {
+          os << "ERROR: Proc " << world_rank << ", row " << loc_row
+              << ", 2*A[" << i << "]=" << 2*A_values[i] << ", but "
+              <<     "B[" << i << "]=" <<   B_values[i] << "!\n";
+          errors += 1;
+        }
+      }
+      if (errors) {
+        Tpetra::Details::gathervPrint(out, os.str(), *(col_map->getComm()));
+        TEST_ASSERT(false);
+      }
     }
   }
 
