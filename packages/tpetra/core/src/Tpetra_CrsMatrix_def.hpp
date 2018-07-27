@@ -161,6 +161,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, size_t, "
       "ProfileType[, RCP<ParameterList>]): ";
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX:HAS_MAX_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && maxNumEntriesPerRow>0, std::invalid_argument, "DynamicProfile for CrsMatrix requested maxNumEntriesPerRow.gt.0");
+
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, maxNumEntriesPerRow,
@@ -196,6 +204,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX:HAS_NUM_ENT_PER_ROW_TO_ALLOC");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && !NumEntriesPerRowToAlloc.is_null(), std::invalid_argument, "DynamicProfile for CrsMatrix requested and !NumEntriesPerRowToAlloc.is_null()");
+
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, NumEntriesPerRowToAlloc,
@@ -232,6 +248,13 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
       "size_t, ProfileType[, RCP<ParameterList>]): ";
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX:HAS_MAX_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && maxNumEntriesPerRow > 0, std::invalid_argument, "DynamicProfile for CrsMatrix requested and maxNumEntriesPerRow.gt.0");
 
 #ifdef HAVE_TPETRA_DEBUG
     // An artifact of debugging something a while back.
@@ -282,6 +305,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsMatrix requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_MATRIX:HAS_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && !numEntPerRow.is_null(), std::invalid_argument, "DynamicProfile for CrsMatrix requested and !numEntPerRow.is_null()");
+
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, numEntPerRow,

@@ -51,6 +51,7 @@
 /// include this file (Tpetra_CrsMatrix_decl.hpp).
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -4904,6 +4905,11 @@ namespace Tpetra {
                    size_t maxNumEntriesPerRow = 0,
                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CREATE_CRS_MATRIX");
+    TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "DynamicProfile and createCrsMatrix called");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CREATE_CRS_MATRIX:HAS_MAX_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile && maxNumEntriesPerRow>0, std::invalid_argument, "DynamicProfile and createCrsMatrix called and maxNumEntriesPerRow.gt.0");
+
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
     return Teuchos::rcp (new matrix_type (map, maxNumEntriesPerRow,
                                           DynamicProfile, params));
