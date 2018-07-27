@@ -254,6 +254,14 @@ namespace Tpetra {
     const char tfecfFuncName[] = "CrsGraph(rowMap,maxNumEntriesPerRow,"
       "pftype,params): ";
     staticAssertions ();
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH:HAS_MAX_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && maxNumEntriesPerRow>0, std::invalid_argument, "DynamicProfile for CrsGraph requested maxNumEntriesPerRow.gt.0");
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
        std::invalid_argument, "The allocation hint maxNumEntriesPerRow must be "
@@ -298,6 +306,15 @@ namespace Tpetra {
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,"
       "pftype,params): ";
     staticAssertions ();
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH:HAS_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && maxNumEntriesPerRow>0, std::invalid_argument, "DynamicProfile for CrsGraph requested maxNumEntriesPerRow.gt.0");
+
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
       std::invalid_argument, "The allocation hint maxNumEntriesPerRow must be "
@@ -339,6 +356,13 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
     staticAssertions ();
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH:HAS_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && !numEntPerRow.is_null(), std::invalid_argument, "DynamicProfile for CrsGraph requested !numEntPerRow.is_null()");
 
     const size_t lclNumRows = rowMap.is_null () ?
       static_cast<size_t> (0) : rowMap->getNodeNumElements ();
@@ -413,6 +437,13 @@ namespace Tpetra {
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
     staticAssertions ();
 
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH:HAS_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && numEntPerRow.extent(0)>0, std::invalid_argument, "DynamicProfile for CrsGraph requested and numEntPerRow.extent(0)>0");
+
     const size_t lclNumRows = rowMap.is_null () ?
       static_cast<size_t> (0) : rowMap->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -474,6 +505,13 @@ namespace Tpetra {
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
     staticAssertions ();
 
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH:HAS_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && numEntPerRow.extent(0)>0, std::invalid_argument, "DynamicProfile for CrsGraph requested and numEntPerRow.extent(0)>0");
+
     const size_t lclNumRows = rowMap.is_null () ?
       static_cast<size_t> (0) : rowMap->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -534,6 +572,13 @@ namespace Tpetra {
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,"
       "params): ";
     staticAssertions ();
+
+    bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile, std::invalid_argument, "DynamicProfile for CrsGraph requested");
+    no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:CRS_GRAPH:HAS_NUM_ENT_PER_ROW");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(no_dynamic_profile && pftype == DynamicProfile && !numEntPerRow.is_null(), std::invalid_argument, "DynamicProfile for CrsGraph requested !numEntPerRow.is_null()");
 
     const size_t lclNumRows = rowMap.is_null () ?
       static_cast<size_t> (0) : rowMap->getNodeNumElements ();

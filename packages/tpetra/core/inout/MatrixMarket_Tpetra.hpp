@@ -57,6 +57,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
 #include "Teuchos_MatrixMarket_Raw_Graph_Adder.hpp"
@@ -2287,6 +2288,8 @@ namespace Tpetra {
                   const bool tolerant=false,
                   const bool debug=false)
       {
+        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
+        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         return readSparse (in, pComm, Teuchos::null, callFillComplete, tolerant, debug);
       }
 
@@ -2316,6 +2319,9 @@ namespace Tpetra {
         const bool extraDebug = false;
         const int myRank = pComm->getRank ();
         const int rootRank = 0;
+
+        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
+        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
 
         // Current line number in the input stream.  Various calls
         // will modify this depending on the number of lines that are
@@ -2852,6 +2858,8 @@ namespace Tpetra {
                   const bool tolerant=false,
                   const bool debug=false)
       {
+        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
+        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         return readSparse (in, pComm, Teuchos::null, constructorParams,
                            fillCompleteParams, tolerant, debug);
       }
@@ -2879,6 +2887,8 @@ namespace Tpetra {
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
 
+        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
+        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         const bool extraDebug = false;
         const int myRank = pComm->getRank ();
         const int rootRank = 0;
@@ -3439,6 +3449,8 @@ namespace Tpetra {
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
 
+        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
+        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         RCP<const Comm<int> > pComm = rowMap->getComm ();
         const int myRank = pComm->getRank ();
         const int rootRank = 0;
