@@ -130,6 +130,7 @@ struct AbsMax {
 } // namespace Tpetra
 
 namespace Tpetra {
+namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -139,8 +140,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    Details::STORAGE_1D_UNPACKED :
-                    Details::STORAGE_2D),
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -182,8 +183,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    Details::STORAGE_1D_UNPACKED :
-                    Details::STORAGE_2D),
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -226,8 +227,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    Details::STORAGE_1D_UNPACKED :
-                    Details::STORAGE_2D),
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -283,8 +284,8 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
-                    Details::STORAGE_1D_UNPACKED :
-                    Details::STORAGE_2D),
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -324,7 +325,7 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
     dist_object_type (graph->getRowMap ()),
     staticGraph_ (graph),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -371,7 +372,7 @@ namespace Tpetra {
              const typename local_matrix_type::values_type& values,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -392,7 +393,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     if (rowPointers.extent (0) != 0) {
       const size_t numEnt =
-        Details::getEntryOnHost (rowPointers, rowPointers.extent (0) - 1);
+        ::Tpetra::Details::getEntryOnHost (rowPointers, rowPointers.extent (0) - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numEnt != static_cast<size_t> (columnIndices.extent (0)) ||
          numEnt != static_cast<size_t> (values.extent (0)),
@@ -473,7 +474,7 @@ namespace Tpetra {
              const Teuchos::ArrayRCP<Scalar>& val,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
@@ -542,7 +543,7 @@ namespace Tpetra {
     dist_object_type (rowMap),
     lclMatrix_ (lclMatrix),
     k_values1D_ (lclMatrix.values),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
     fillComplete_ (true),
     frobNorm_ (-STM::one ())
   {
@@ -599,7 +600,7 @@ namespace Tpetra {
     dist_object_type (rowMap),
     lclMatrix_ (lclMatrix),
     k_values1D_ (lclMatrix.values),
-    storageStatus_ (Details::STORAGE_1D_PACKED),
+    storageStatus_ (::Tpetra::Details::STORAGE_1D_PACKED),
     fillComplete_ (true),
     frobNorm_ (-STM::one ())
   {
@@ -761,7 +762,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalNumDiagsImpl () const {
     const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).getGlobalNumDiagsImpl ();
   }
 
@@ -777,7 +778,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumDiagsImpl () const {
     const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).getNodeNumDiagsImpl ();
   }
 
@@ -895,7 +896,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isLowerTriangularImpl () const {
     const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).isLowerTriangularImpl ();
   }
 
@@ -911,7 +912,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isUpperTriangularImpl () const {
     const crs_graph_type& G = this->getCrsGraphRef ();
-    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).isUpperTriangularImpl ();
   }
 
@@ -1069,7 +1070,7 @@ namespace Tpetra {
         << (lclNumRows+1) << ".");
 
       const size_t lclTotalNumEntries =
-        Details::getEntryOnHost (k_ptrs, lclNumRows);
+        ::Tpetra::Details::getEntryOnHost (k_ptrs, lclNumRows);
 
       // Allocate array of (packed???) matrix values.
       typedef typename local_matrix_type::values_type values_type;
@@ -1280,7 +1281,7 @@ namespace Tpetra {
            "branch) After copying into k_ptrs, k_ptrs.extent(0) = " <<
            numOffsets << " != (lclNumRows+1) = " << (lclNumRows+1) << ".");
 
-        const auto valToCheck = Details::getEntryOnHost (k_ptrs, numOffsets-1);
+        const auto valToCheck = ::Tpetra::Details::getEntryOnHost (k_ptrs, numOffsets-1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) != k_vals.extent (0),
           std::logic_error, "(DynamicProfile branch) After packing, k_ptrs("
@@ -1316,7 +1317,7 @@ namespace Tpetra {
       {
         const size_t numOffsets = curRowOffsets.extent (0);
         const auto valToCheck =
-          Details::getEntryOnHost (curRowOffsets, numOffsets - 1);
+          ::Tpetra::Details::getEntryOnHost (curRowOffsets, numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (numOffsets != 0 &&
            myGraph_->k_lclInds1D_.extent (0) != valToCheck,
@@ -1339,7 +1340,7 @@ namespace Tpetra {
           const size_t numOffsets =
             static_cast<size_t> (curRowOffsets.extent (0));
           const auto valToCheck =
-            Details::getEntryOnHost (curRowOffsets, numOffsets-1);
+            ::Tpetra::Details::getEntryOnHost (curRowOffsets, numOffsets-1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (static_cast<size_t> (valToCheck) !=
              static_cast<size_t> (k_values1D_.extent (0)),
@@ -1393,7 +1394,7 @@ namespace Tpetra {
            "k_ptrs.extent(0) = " << k_ptrs.extent (0) << " != "
            "lclNumRows+1 = " << (lclNumRows+1) << ".");
         {
-          const auto valToCheck = Details::getEntryOnHost (k_ptrs, lclNumRows);
+          const auto valToCheck = ::Tpetra::Details::getEntryOnHost (k_ptrs, lclNumRows);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (valToCheck != lclTotalNumEntries, std::logic_error,
              "(StaticProfile unpacked branch) After filling k_ptrs, "
@@ -1441,7 +1442,7 @@ namespace Tpetra {
            "probably means that k_rowPtrs_ was never allocated.");
         if (k_ptrs.extent (0) != 0) {
           const size_t numOffsets = static_cast<size_t> (k_ptrs.extent (0));
-          const auto valToCheck = Details::getEntryOnHost (k_ptrs, numOffsets - 1);
+          const auto valToCheck = ::Tpetra::Details::getEntryOnHost (k_ptrs, numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (static_cast<size_t> (valToCheck) != k_vals.extent (0),
              std::logic_error,
@@ -1470,7 +1471,7 @@ namespace Tpetra {
           "k_rowPtrs_ was never allocated.");
         if (k_ptrs_const.extent (0) != 0) {
           const size_t numOffsets = static_cast<size_t> (k_ptrs_const.extent (0));
-          const auto valToCheck = Details::getEntryOnHost (k_ptrs_const, numOffsets - 1);
+          const auto valToCheck = ::Tpetra::Details::getEntryOnHost (k_ptrs_const, numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (static_cast<size_t> (valToCheck) != k_vals.extent (0),
              std::logic_error,
@@ -1498,7 +1499,7 @@ namespace Tpetra {
     if (k_ptrs_const.extent (0) != 0) {
       const size_t numOffsets = static_cast<size_t> (k_ptrs_const.extent (0));
       const size_t k_ptrs_const_numOffsetsMinus1 =
-        Details::getEntryOnHost (k_ptrs_const, numOffsets - 1);
+        ::Tpetra::Details::getEntryOnHost (k_ptrs_const, numOffsets - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (k_ptrs_const_numOffsetsMinus1 != k_vals.extent (0),
          std::logic_error, "After packing, k_ptrs_const(" << (numOffsets-1) <<
@@ -1546,8 +1547,8 @@ namespace Tpetra {
 
       // Whatever graph was before, it's StaticProfile now.
       myGraph_->pftype_ = StaticProfile;
-      myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
-      this->storageStatus_ = Details::STORAGE_1D_PACKED;
+      myGraph_->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
+      this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
     }
 
     // Make the local graph, using the arrays of row offsets and
@@ -1688,7 +1689,7 @@ namespace Tpetra {
          "h_ptrs.extent(0) = " << h_ptrs.extent (0) << " != "
          "(lclNumRows+1) = " << (lclNumRows+1) << ".");
       {
-        const auto valToCheck = Details::getEntryOnHost (k_ptrs, lclNumRows);
+        const auto valToCheck = ::Tpetra::Details::getEntryOnHost (k_ptrs, lclNumRows);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) != lclTotalNumEntries,
            std::logic_error, "(DynamicProfile branch) After packing k_ptrs, "
@@ -1717,7 +1718,7 @@ namespace Tpetra {
       if (k_ptrs.extent (0) != 0) {
         const size_t numOffsets = static_cast<size_t> (k_ptrs.extent (0));
         const auto valToCheck =
-          Details::getEntryOnHost (k_ptrs, numOffsets - 1);
+          ::Tpetra::Details::getEntryOnHost (k_ptrs, numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) != k_vals.extent (0),
            std::logic_error, "(DynamicProfile branch) After packing, k_ptrs("
@@ -1785,7 +1786,7 @@ namespace Tpetra {
       // unpacked 2-D and 1-D storage, and keep the packed storage.
       values2D_ = null;
       k_values1D_ = k_vals;
-      this->storageStatus_ = Details::STORAGE_1D_PACKED;
+      this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
     }
 
     // Build the local sparse matrix object.  At this point, the local
@@ -3817,7 +3818,7 @@ namespace Tpetra {
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
-    this->storageStatus_ = Details::STORAGE_1D_PACKED;
+    this->storageStatus_ = ::Tpetra::Details::STORAGE_1D_PACKED;
 
     checkInternalState ();
   }
@@ -4114,7 +4115,7 @@ namespace Tpetra {
       }
       auto x_lcl = xp->template getLocalView<dev_memory_space> ();
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
-      Details::leftScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
+      ::Tpetra::Details::leftScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
     }
     else {
       execution_space::fence (); // for UVM's sake
@@ -4190,7 +4191,7 @@ namespace Tpetra {
       }
       auto x_lcl = xp->template getLocalView<dev_memory_space> ();
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
-      Details::rightScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
+      ::Tpetra::Details::rightScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
     }
     else {
       execution_space::fence (); // for UVM's sake
@@ -7115,7 +7116,7 @@ namespace Tpetra {
   {
     // The call to packNew in packAndPrepareNew catches and handles any exceptions.
     if (this->isStaticGraph ()) {
-      using Details::packCrsMatrixNew;
+      using ::Tpetra::Details::packCrsMatrixNew;
       packCrsMatrixNew (*this, exports, numPacketsPerLID, exportLIDs,
                         constantNumPackets, dist);
     }
@@ -7348,7 +7349,7 @@ namespace Tpetra {
         replaceGlobalValues (globalRowIndex, columnIndices, values);
       }
       else if (combineMode == ABSMAX) {
-        using Details::AbsMax;
+        using ::Tpetra::Details::AbsMax;
         AbsMax<Scalar> f;
         this->template transformGlobalValues<AbsMax<Scalar> > (globalRowIndex,
                                                                columnIndices,
@@ -7561,7 +7562,7 @@ namespace Tpetra {
     // Exception are caught and handled upstream, so we just call the
     // implementations directly.
     if (this->isStaticGraph ()) {
-      using Details::unpackCrsMatrixAndCombineNew;
+      using ::Tpetra::Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew (*this, imports, numPacketsPerLID,
                                     importLIDs, constantNumPackets,
                                     distor, combineMode, atomic);
@@ -8908,6 +8909,7 @@ namespace Tpetra {
     transferAndFillComplete (destMatrix, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
+} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -8918,7 +8920,9 @@ namespace Tpetra {
 
 #define TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
-  template class CrsMatrix< SCALAR , LO , GO , NODE >; \
+  namespace Classes { \
+    template class CrsMatrix< SCALAR , LO , GO , NODE >; \
+  } \
   template Teuchos::RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
                 CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
 
