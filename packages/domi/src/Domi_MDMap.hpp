@@ -72,9 +72,6 @@
 #ifdef HAVE_TPETRA
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
-typedef Tpetra::Details::DefaultTypes::local_ordinal_type  TpetraLOType;
-typedef Tpetra::Details::DefaultTypes::global_ordinal_type TpetraGOType;
-typedef Tpetra::Details::DefaultTypes::node_type           TpetraNodeType;
 #endif
 
 namespace Domi
@@ -767,10 +764,9 @@ public:
    *
    * Note that the boundary padding is always included in the map
    */
-  template< class LocalOrdinal  = TpetraLOType,
-            class GlobalOrdinal = TpetraGOType,
-            class Node          = TpetraNodeType>
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+  template< class LocalOrdinal,
+            class GlobalOrdinal = LocalOrdinal >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal > >
   getTpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that represents the
@@ -785,10 +781,9 @@ public:
    *
    * Note that the boundary padding is always included in the map
    */
-  template< class LocalOrdinal  = TpetraLOType,
-            class GlobalOrdinal = TpetraGOType,
-            class Node          = TpetraNodeType >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+  template< class LocalOrdinal,
+            class GlobalOrdinal = LocalOrdinal >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal > >
   getTpetraAxisMap(int axis,
                    bool withCommPad=true) const;
 
@@ -1120,147 +1115,6 @@ getGlobalDims() const
 {
   return _globalDims;
 }
-
-////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////
-// Templated method implementations //
-//////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////
-
-#ifdef HAVE_TPETRA
-
-template< class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
-MDMap::getTpetraMap(bool withCommPad) const
-{
-  if (withCommPad)
-  {
-    // Allocate the elementsMDArray and the index array
-    int num_dims = numDims();
-    Teuchos::Array<dim_type> localDims(num_dims);
-    for (int axis = 0; axis < num_dims; ++axis)
-      localDims[axis] = _localDims[axis];
-    MDArray< GlobalOrdinal > elementMDArray(localDims);
-    Teuchos::Array< LocalOrdinal > index(num_dims);
-
-    // Iterate over the local MDArray and assign global IDs
-    for (typename MDArray< GlobalOrdinal >::iterator it = elementMDArray.begin();
-         it != elementMDArray.end(); ++it)
-    {
-      GlobalOrdinal globalID = 0;
-      for (int axis = 0; axis < num_dims; ++axis)
-      {
-        int axisRank        = getCommIndex(axis);
-        GlobalOrdinal start = _globalRankBounds[axis][axisRank].start() -
-                              _pad[axis][0];
-        globalID += (start + it.index(axis)) * _globalStrides[axis];
-      }
-      *it = globalID;
-    }
-
-    // Return the Tpetra::Map
-    const Teuchos::Array< GlobalOrdinal > & myElements =
-      elementMDArray.array();
-    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
-      _mdComm->getTeuchosComm();
-    return
-      Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
-                                    GlobalOrdinal,
-                                    Node >(Teuchos::OrdinalTraits< Tpetra::global_size_t >::invalid(),
-                                           myElements(),
-                                           0,
-                                           teuchosComm));
-  }
-  else
-  {
-    // Allocate the elementMDArray MDArray and the index array
-    int num_dims = numDims();
-    Teuchos::Array< LocalOrdinal > index(num_dims);
-    Teuchos::Array< dim_type >     myDims(num_dims);
-    for (int axis = 0; axis < num_dims; ++axis)
-    {
-      myDims[axis] =
-        _localDims[axis] - _pad[axis][0] - _pad[axis][1];
-      int axisRank = getCommIndex(axis);
-      if (axisRank == 0)
-        myDims[axis] += _bndryPad[axis][0];
-      if (axisRank == getCommDim(axis)-1)
-        myDims[axis] += _bndryPad[axis][1];
-    }
-    MDArray< GlobalOrdinal > elementMDArray(myDims());
-
-    // Iterate over the local MDArray and assign global IDs
-    for (typename MDArray< GlobalOrdinal >::iterator it = elementMDArray.begin();
-         it != elementMDArray.end(); ++it)
-    {
-      GlobalOrdinal globalID = 0;
-      for (int axis = 0; axis < num_dims; ++axis)
-      {
-        int axisRank        = getCommIndex(axis);
-        GlobalOrdinal start = _globalRankBounds[axis][axisRank].start();
-        if (axisRank == 0)
-          start -= _bndryPad[axis][0];
-        if (axisRank == getCommDim(axis)-1)
-          start += _bndryPad[axis][1];
-        globalID += (start + it.index(axis)) * _globalStrides[axis];
-      }
-    }
-
-    // Return the Tpetra::Map
-    const Teuchos::Array< GlobalOrdinal> & myElements =
-      elementMDArray.array();
-    Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
-      _mdComm->getTeuchosComm();
-    return
-      Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
-                                    GlobalOrdinal,
-                                    Node >(Teuchos::OrdinalTraits< Tpetra::global_size_t>::invalid(),
-                                           myElements(),
-                                           0,
-                                           teuchosComm));
-  }
-}
-#endif
-
-////////////////////////////////////////////////////////////////////////
-
-#ifdef HAVE_TPETRA
-
-template< class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
-MDMap::
-getTpetraAxisMap(int axis,
-                 bool withCommPad) const
-{
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= numDims())),
-    RangeError,
-    "invalid axis index = " << axis << " (number of dimensions = " <<
-    numDims() << ")");
-#endif
-  int num_dims = numDims();
-  Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
-    _mdComm->getTeuchosComm();
-  Teuchos::Array< GlobalOrdinal > elements(getLocalDim(axis,withCommPad));
-  GlobalOrdinal start = getGlobalRankBounds(axis,true).start();
-  if (withCommPad && (getCommIndex(axis) != 0)) start -= _pad[axis][0];
-  for (LocalOrdinal i = 0; i < elements.size(); ++i)
-    elements[i] = i + start;
-  return Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
-                                       GlobalOrdinal,
-                                       Node >(Teuchos::OrdinalTraits< Tpetra::global_size_t>::invalid(),
-                                              elements,
-                                              0,
-                                              teuchosComm));
-}
-#endif
 
 ////////////////////////////////////////////////////////////////////////
 
