@@ -57,7 +57,6 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
 #include "Teuchos_MatrixMarket_Raw_Graph_Adder.hpp"
@@ -459,14 +458,14 @@ namespace Tpetra {
                             std::logic_error,
                             "pRowMap->getNodeElementList().size() = "
                             << myNumRows
-                            << " != pRowMap->getNodeNumElements() = "
+                            << " != (*pRowMap).getNodeNumElements() = "
                             << pRowMap->getNodeNumElements() << ".  "
                             "Please report this bug to the Tpetra developers.");
          TEUCHOS_TEST_FOR_EXCEPTION(myRank == 0 && numEntriesPerRow.size() < myNumRows,
                             std::logic_error,
                             "On Proc 0: numEntriesPerRow.size() = "
                             << numEntriesPerRow.size()
-                            << " != pRowMap->getNodeElementList().size() = "
+                            << " != (*pRowMap).getNodeElementList().size() = "
                             << myNumRows << ".  Please report this bug to the "
                             "Tpetra developers.");
 
@@ -823,8 +822,7 @@ namespace Tpetra {
         // do first-touch reallocation (a NUMA (Non-Uniform Memory
         // Access) optimization on multicore CPUs).
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
-                                       DynamicProfile));
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow, Tpetra::StaticProfile));
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
@@ -917,7 +915,7 @@ namespace Tpetra {
         // Access) optimization on multicore CPUs).
         RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
-                                       DynamicProfile, constructorParams));
+                                       Tpetra::StaticProfile, constructorParams));
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
@@ -982,9 +980,9 @@ namespace Tpetra {
         // do first-touch reallocation.
         RCP<sparse_matrix_type> A; // the matrix to return.
         if (colMap.is_null ()) { // the user didn't provide a column Map
-          A = rcp (new sparse_matrix_type (rowMap, myNumEntriesPerRow, DynamicProfile));
+          A = rcp (new sparse_matrix_type (rowMap, myNumEntriesPerRow, Tpetra::StaticProfile));
         } else { // the user provided a column Map
-          A = rcp (new sparse_matrix_type (rowMap, colMap, myNumEntriesPerRow, DynamicProfile));
+          A = rcp (new sparse_matrix_type (rowMap, colMap, myNumEntriesPerRow, Tpetra::StaticProfile));
         }
 
         // List of the global indices of my rows.
@@ -2288,8 +2286,6 @@ namespace Tpetra {
                   const bool tolerant=false,
                   const bool debug=false)
       {
-        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
-        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         return readSparse (in, pComm, Teuchos::null, callFillComplete, tolerant, debug);
       }
 
@@ -2319,9 +2315,6 @@ namespace Tpetra {
         const bool extraDebug = false;
         const int myRank = pComm->getRank ();
         const int rootRank = 0;
-
-        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
-        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
 
         // Current line number in the input stream.  Various calls
         // will modify this depending on the number of lines that are
@@ -2858,8 +2851,6 @@ namespace Tpetra {
                   const bool tolerant=false,
                   const bool debug=false)
       {
-        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
-        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         return readSparse (in, pComm, Teuchos::null, constructorParams,
                            fillCompleteParams, tolerant, debug);
       }
@@ -2887,8 +2878,6 @@ namespace Tpetra {
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
-        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         const bool extraDebug = false;
         const int myRank = pComm->getRank ();
         const int rootRank = 0;
@@ -3449,8 +3438,6 @@ namespace Tpetra {
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
 
-        bool no_dynamic_profile = ::Tpetra::Details::Behavior::debug("NO_DYNAMIC_PROFILE:MATRIX_MARKET_READER");
-        TEUCHOS_TEST_FOR_EXCEPTION(no_dynamic_profile, std::invalid_argument, "readSparse called and no dynamic profile requested");
         RCP<const Comm<int> > pComm = rowMap->getComm ();
         const int myRank = pComm->getRank ();
         const int rootRank = 0;
@@ -3906,10 +3893,15 @@ namespace Tpetra {
         const size_type myNumRows = myRows.size ();
         const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
 
+        size_t maxNumEntriesPerRow = 0;
         ArrayRCP<size_t> gatherNumEntriesPerRow = arcp<size_t>(myNumRows);
         for (size_type i_ = 0; i_ < myNumRows; i_++) {
           gatherNumEntriesPerRow[i_] = numEntriesPerRow[myRows[i_]-indexBase];
+          maxNumEntriesPerRow = std::max(gatherNumEntriesPerRow[i_], maxNumEntriesPerRow);
         }
+        // Since numEntriesPerRow is only valid on rank 0, maxNumEntriesPerRow
+        // is only nonzero on rank 0.
+        Teuchos::broadcast<int,size_t>(*pComm, 0, Teuchos::inOutArg(maxNumEntriesPerRow));
 
         // Create a matrix using this Map, and fill in on Proc 0.  We
         // know how many entries there are in each row, so we can use
@@ -3960,9 +3952,9 @@ namespace Tpetra {
 
         RCP<sparse_matrix_type> A;
         if (colMap.is_null ()) {
-          A = rcp (new sparse_matrix_type (rowMap, 0));
+          A = rcp (new sparse_matrix_type (rowMap, maxNumEntriesPerRow, Tpetra::StaticProfile));
         } else {
-          A = rcp (new sparse_matrix_type (rowMap, colMap, 0));
+          A = rcp (new sparse_matrix_type (rowMap, colMap, maxNumEntriesPerRow, Tpetra::StaticProfile));
         }
         typedef Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
         export_type exp (gatherRowMap, rowMap);
@@ -6009,6 +6001,7 @@ namespace Tpetra {
         using Teuchos::null;
         using Teuchos::RCP;
         using Teuchos::rcpFromRef;
+        using Teuchos::arcp;
         using std::cerr;
         using std::endl;
         typedef scalar_type ST;
@@ -6102,7 +6095,8 @@ namespace Tpetra {
         // for the case that the matrix is not square.
         RCP<sparse_matrix_type> newMatrix =
           rcp (new sparse_matrix_type (gatherRowMap, gatherColMap,
-                                       static_cast<size_t> (0)));
+                                       pMatrix->getGlobalMaxNumRowEntries(),
+                                       Tpetra::StaticProfile));
         // Import the sparse matrix onto Proc 0.
         newMatrix->doImport (*pMatrix, importer, INSERT);
 
