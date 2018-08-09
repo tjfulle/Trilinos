@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
 
   out << "Creating and filling matrix A" << endl;
 
-  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3));
+  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3, Tpetra::StaticProfile));
 
   Array<scalar_type> val (3);
   Array<global_ordinal_type> ind (3);
@@ -289,7 +289,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
 
   out << "Creating and filling matrix A" << endl;
 
-  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3));
+  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3, Tpetra::StaticProfile));
 
   Array<scalar_type> val (3);
   Array<global_ordinal_type> ind (3);
