@@ -166,7 +166,19 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   return identityMatrix;
 }
 
-
+template<class SC, class LO, class GO,class NT>
+RCP<CrsMatrix<SC, LO, GO, NT>>
+get_dynamic_profile_clone(Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NT>>& A)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  RCP<ParameterList> p = parameterList("Tpetra::CrsMatrix::clone");
+  p->set<bool>("Static profile clone", false);
+  p->set<bool>("Locally indexed clone", false);
+  p->set<bool>("fillComplete clone", false);
+  return A->clone(A->getNode(), p);
+}
 
 typedef struct add_test_results_struct{
   double correctNorm;
@@ -312,23 +324,20 @@ null_add_test (const Matrix_t& A,
 template<class Matrix_t>
 add_test_results add_into_test(
     RCP<Matrix_t > A,
-    RCP<Matrix_t > B,
+    RCP<Matrix_t > Barg,
     bool AT,
     RCP<Matrix_t > C,
     RCP<const Comm<int> > comm)
 {
   typedef typename Matrix_t::scalar_type SC;
-  typedef typename Matrix_t::local_ordinal_type LO;
-  typedef typename Matrix_t::global_ordinal_type GO;
-  typedef typename Matrix_t::node_type NT;
-  typedef Map<LO,GO,NT> Map_t;
 
   add_test_results toReturn;
   toReturn.correctNorm = C->getFrobeniusNorm ();
 
-  RCP<const Map_t > rowmap =
-    AT ? A->getDomainMap () : A->getRowMap ();
-  RCP<Matrix_t> computedC = rcp (new Matrix_t (rowmap, 1));
+  // The Matrix Market reader returns a matrix with static profile.  However,
+  // the two matrix version of Add requires that the second matrix be dynamic
+  // profile.
+  RCP<Matrix_t> B = get_dynamic_profile_clone(Barg);
   SC one = Teuchos::ScalarTraits<SC>::one();
   Tpetra::MatrixMatrix::Add (*A, AT, one, *B, one);
   B->fillComplete ();
