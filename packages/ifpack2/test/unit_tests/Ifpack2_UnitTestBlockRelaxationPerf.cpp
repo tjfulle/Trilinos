@@ -62,7 +62,7 @@ RCP<const TMat> create_testmat_t(const RCP<const TMap>& rowmap)
   // 0 -1  0
   //-1  4 -1
   // 0 -1  0
-  RCP<TMat> crsmatrix = rcp(new TMat(rowmap, 3));
+  RCP<TMat> crsmatrix = rcp(new TMat(rowmap, 3, Tpetra::StaticProfile));
   int numRows = rowmap->getGlobalNumElements();
   double tile[3] = {-2, 4, -2};
   int firstCols[] = {0, 1};
@@ -84,7 +84,7 @@ RCP<const TMat> create_testmat_t(const RCP<const TMap>& rowmap)
 
 RCP<const Epetra_CrsMatrix> create_testmat_e(const Epetra_Map& rowmap)
 {
-  RCP<Epetra_CrsMatrix> crsmatrix = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, rowmap, 3));
+  RCP<Epetra_CrsMatrix> crsmatrix = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, rowmap, 3, Tpetra::StaticProfile));
   int numRows = rowmap.NumGlobalElements();
   double tile[3] = {-2, 4, -2};
   int firstCols[] = {0, 1};

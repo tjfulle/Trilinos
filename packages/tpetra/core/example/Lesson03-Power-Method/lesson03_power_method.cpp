@@ -254,7 +254,7 @@ main (int argc, char *argv[])
 
     // Create a Tpetra sparse matrix whose rows have distribution
     // given by the Map.  We expect at most three entries per row.
-    RCP<crs_matrix_type> A (new crs_matrix_type (map, 3));
+    RCP<crs_matrix_type> A (new crs_matrix_type (map, 3, Tpetra::StaticProfile));
 
     // Fill the sparse matrix, one row at a time.
     const scalar_type two = static_cast<scalar_type> (2.0);
