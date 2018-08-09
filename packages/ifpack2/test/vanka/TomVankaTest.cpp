@@ -114,7 +114,7 @@
 #endif
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_CrsGraph.hpp"
+//#include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 

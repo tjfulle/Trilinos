@@ -106,7 +106,7 @@ namespace {
       {
         RCP<crs_matrix_type> ZeroMat;
         // must explicitly provide the column map for implicit diagonals
-        ZeroMat = rcp(new crs_matrix_type(map,map,0));
+        ZeroMat = rcp(new crs_matrix_type(map, map, 0, Tpetra::StaticProfile));
         RCP<ParameterList> params = parameterList();
         RCP<ParameterList> fillparams = sublist(params,"Local Sparse Ops");
         fillparams->set("Prepare Solve", true);
@@ -286,11 +286,11 @@ namespace {
         {
           if (diag == UNIT_DIAG) {
             // must explicitly specify the column map
-            AMat = rcp(new crs_matrix_type(map,map,2));
+            AMat = rcp(new crs_matrix_type(map,map,2, Tpetra::StaticProfile));
           }
           else {
             // can let the matrix compute a column map
-            AMat = rcp(new crs_matrix_type(map,2));
+            AMat = rcp(new crs_matrix_type(map,2, Tpetra::StaticProfile));
           }
           // fill the matrix
           if (uplo == UPPER_TRI) {
