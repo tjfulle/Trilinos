@@ -46,13 +46,12 @@
 
 namespace FROSch {
     
-
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
+    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class OneLevelPreconditioner : public SchwarzPreconditioner<SC,LO,GO,NO> {
-    
+        
     public:
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr MapPtr;
@@ -65,7 +64,6 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SumOperatorPtr SumOperatorPtr;
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiplicativeOperatorPtr MultiplicativeOperatorPtr;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::OverlappingOperatorPtr OverlappingOperatorPtr;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr AlgebraicOverlappingOperatorPtr;
         
@@ -98,16 +96,16 @@ namespace FROSch {
         
         virtual std::string description() const;
         
-        virtual int resetMatrix(CrsMatrixPtr &k);
+        virtual CrsMatrixPtr getCrsMatrix() const;
+        
         
     protected:
         
         CrsMatrixPtr K_;
         
         SumOperatorPtr SumOperator_;
-        MultiplicativeOperatorPtr MultiplicativeOperator_;
         OverlappingOperatorPtr OverlappingOperator_;
-        bool UseMultiplicative_;
+        
     };
     
 }
