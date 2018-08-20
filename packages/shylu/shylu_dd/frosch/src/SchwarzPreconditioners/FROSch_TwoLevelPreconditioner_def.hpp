@@ -60,13 +60,8 @@ namespace FROSch {
             CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
         } else {
             FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
-        } // TODO: Add ability to disable individual levels
-        if (this->UseMultiplicative_) {
-            this->MultiplicativeOperator_->addOperator(CoarseOperator_);
-        }
-        else{
-            this->SumOperator_->addOperator(CoarseOperator_);
-        }
+        } // Todo: Möglichkeit die einzelnen Level auszuschalten
+        this->SumOperator_->addOperator(CoarseOperator_);
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -215,20 +210,19 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     std::string TwoLevelPreconditioner<SC,LO,GO,NO>::description() const
     {
+        this->ParameterList_->print();
         return "GDSW Preconditioner";
     }
-
+    
     template <class SC,class LO,class GO,class NO>
-    int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
-    {
-        this->K_ = k;
-        this->OverlappingOperator_->resetMatrix(this->K_);
-        if (this->ParameterList_->get("TwoLevel",true)) {
-            CoarseOperator_->resetMatrix(this->K_);
-            if (this->UseMultiplicative_) this->MultiplicativeOperator_->resetMatrix(this->K_);
+    void TwoLevelPreconditioner<SC,LO,GO,NO>::setParameterList(ParameterListPtr para){
+        this->ParameterList_=para;
+        if(this->Verbose_){
+            std::cout<<"In set ParameterList\n";
+            this->ParameterList_->print();
         }
-        return 0;
     }
+    
 }
 
 #endif

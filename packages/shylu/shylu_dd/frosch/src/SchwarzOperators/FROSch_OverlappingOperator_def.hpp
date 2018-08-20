@@ -52,19 +52,10 @@ namespace FROSch {
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList),
     OverlappingMatrix_ (),
     OverlappingMap_ (),
-    Scatter_(),
-    SubdomainSolver_ (),
-    Multiplicity_(),
-    Combine_(),
-    levelID_(this->ParameterList_->get("Level ID",1))
+    Scatter_ (),
+    SubdomainSolver_ ()
     {
-        if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Averaging")) {
-            Combine_ = Averaging;
-        } else if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Full")) {
-            Combine_ = Full;
-        } else if (!this->ParameterList_->get("Overlapping Operator Combination","Restricted").compare("Restricted")) {
-            Combine_ = Restricted;
-        }
+        
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -83,49 +74,30 @@ namespace FROSch {
                                                  SC beta) const
     {
         FROSCH_ASSERT(this->IsComputed_,"ERROR: OverlappingOperator has to be computed before calling apply()");
-
+        
         MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *xTmp = x;
-        
+        Teuchos::RCP<const Teuchos::Comm<int> > Comm = x.getMap()->getComm();
         if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
             this->K_->apply(x,*xTmp,mode,1.0,0.0);
         }
         
         MultiVectorPtr xOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
         MultiVectorPtr yOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_->getDomainMap(),x.getNumVectors());
-
-        xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
-
-        xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
         
+        xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
+        
+        xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
+        Comm->barrier(); Comm->barrier(); Comm->barrier();
+        if(Comm->getRank()==0)std::cout<<"Overlapping Op Before Subdomain Solve\n";
         SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,1.0,0.0);
-
-        xTmp->putScalar(0.0);
+        Comm->barrier(); Comm->barrier(); Comm->barrier();
+        if(Comm->getRank()==0)std::cout<<"Overlapping Op After Subdomain Solve\n";
+        
         yOverlap->replaceMap(OverlappingMap_);
-
-        if (Combine_ == Restricted){
-            GO globID = 0;
-            LO localID = 0;
-            for (unsigned i=0; i<y.getNumVectors(); i++) {
-                for (unsigned j=0; j<y.getMap()->getNodeNumElements(); j++) {
-                    globID = y.getMap()->getGlobalElement(j);
-                    localID = yOverlap->getMap()->getLocalElement(globID);
-                    xTmp->getDataNonConst(i)[j] = yOverlap->getData(i)[localID];
-                }
-            }
-        }
-        else{
-            xTmp->doExport(*yOverlap,*Scatter_,Xpetra::ADD);
-        }
-        if (Combine_ == Averaging) {
-            ConstSCVecPtr scaling = Multiplicity_->getData(0);
-            for (unsigned j=0; j<xTmp->getNumVectors(); j++) {
-                SCVecPtr values = xTmp->getDataNonConst(j);
-                for (unsigned i=0; i<values.size(); i++) {
-                    values[i] = values[i] / scaling[i];
-                }
-            }
-        }
+        
+        xTmp->putScalar(0.0);
+        xTmp->doExport(*yOverlap,*Scatter_,Xpetra::ADD);
         
         if (!usePreconditionerOnly && mode != Teuchos::NO_TRANS) {
             this->K_->apply(*xTmp,*xTmp,mode,1.0,0.0);
@@ -136,35 +108,24 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::initializeOverlappingOperator()
     {
+        OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_,OverlappingMap_);
 
         Scatter_ = Xpetra::ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
-        if (Combine_ == Averaging) {
-            Multiplicity_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
-            MultiVectorPtr multiplicityRepeated;
-            multiplicityRepeated = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,1);
-            multiplicityRepeated->putScalar(1.);
-            ExporterPtr multiplicityExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(multiplicityRepeated->getMap(),this->getRangeMap());
-            Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,Xpetra::ADD);
-        }
-        
+
+        SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
+        SubdomainSolver_->initialize();
+
         return 0; // RETURN VALUE
     }
     
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
-
-        if (this->IsComputed_) {// already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
-            OverlappingMatrix_ = this->K_;
-        }
+        int ret = FROSch::UpdateLocalSubdomainMatrix(this->K_,OverlappingMap_,OverlappingMatrix_);
+        FROSCH_ASSERT(ret==0,"UpdateLocalSubdomainMatrix failed");
         
-        OverlappingMatrix_ = ExtractLocalSubdomainMatrix(OverlappingMatrix_,OverlappingMap_);
+        ret = SubdomainSolver_->compute();
         
-        SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
-        SubdomainSolver_->initialize();
-
-        int ret = SubdomainSolver_->compute();
-
         return ret; // RETURN VALUE
     }
     

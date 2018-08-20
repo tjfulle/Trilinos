@@ -41,7 +41,7 @@
 
 #ifndef _FROSCH_TWOLEVELPRECONDITIONER_DECL_HPP
 #define _FROSCH_TWOLEVELPRECONDITIONER_DECL_HPP
-#include <FROSch_SubdomainSolver_def.hpp>
+
 #include <FROSch_OneLevelPreconditioner_def.hpp>
 
 namespace FROSch {
@@ -108,7 +108,8 @@ namespace FROSch {
         
         std::string description() const;
         
-        int resetMatrix(CrsMatrixPtr &k);
+        void setParameterList(ParameterListPtr para);
+        
         
     protected:
         
