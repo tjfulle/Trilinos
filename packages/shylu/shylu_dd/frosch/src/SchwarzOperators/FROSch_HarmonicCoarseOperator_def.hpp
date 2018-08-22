@@ -69,7 +69,7 @@ namespace FROSch {
 
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) {
-            cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
+            std::cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
         }
         if (!this->ParameterList_->get("Recycling","none").compare("basis") && this->IsComputed_) {
             this->setUpCoarseOperator();
