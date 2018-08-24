@@ -143,7 +143,7 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
+  //  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -225,14 +225,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
-      // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,DynamicProfile);
-      matrix.fillComplete(defparams);
-      TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
-    }
-    {
-      // send in a parameterlist, check the defaults
-      RCP<ParameterList> defparams = parameterList();
       // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
       GRPH graph(map,1,StaticProfile);
       graph.fillComplete(defparams);
@@ -242,7 +234,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph(map,1,DynamicProfile);
+      GRPH graph(map,1,StaticProfile);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
@@ -283,9 +275,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     Array<Scalar> vals(ginds.size(),ST::one());
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
     RCP<ParameterList> params = parameterList();
-    for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      params->set("Optimize Storage",((T & 2) == 2));
+    for (int T=0; T<2; ++T) {
+      ProfileType pftype = StaticProfile;
+      params->set("Optimize Storage",(T == 1));
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
@@ -402,7 +394,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // create the matrix
     out << "Create matrix" << endl;
-    MAT A (rowmap, P);
+    MAT A (rowmap, P, StaticProfile);
     for (int i = 0; i < M; ++i) {
       for (int j=0; j < P; ++j) {
         A.insertGlobalValues (static_cast<GO> (M*myImageID+i), tuple<GO> (j), tuple<Scalar> (M*myImageID+i + j*M*N));
@@ -411,7 +403,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // call fillComplete()
     out << "Call fillComplete on the matrix" << endl;
-    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
+    TEST_EQUALITY_CONST( A.getProfileType() == StaticProfile, true );
     A.fillComplete (lclmap, rowmap);
     A.describe (out, VERB_LOW);
 
