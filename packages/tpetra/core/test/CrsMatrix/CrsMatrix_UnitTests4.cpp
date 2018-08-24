@@ -49,7 +49,6 @@
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
-// TODO: add test where dynamic profile initially has no allocation, then entries are added. this will test new view functionality.
 
 namespace Teuchos {
   template <>
@@ -145,7 +144,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -280,7 +278,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     /* Create the identity matrix, three rows per proc */
     RCP<OP> AOp;
     {
-      RCP<MAT> A = rcp(new MAT(map,1));
+      RCP<MAT> A = rcp(new MAT(map,1,Tpetra::StaticProfile));
       A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<Scalar>(ST::one()) );
       A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<Scalar>(ST::one()) );
       A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<Scalar>(ST::one()) );
@@ -350,10 +348,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
     {
-      MAT matrix(map,map,0,DynamicProfile);
+      MAT matrix(map,map,0,StaticProfile);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
-      matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
+      TEST_THROW(matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
       //
       RCP<ParameterList> params = parameterList();
       params->set("Optimize Storage",false);
@@ -385,10 +383,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
-      MAT matrix(map,map,0,DynamicProfile);
+      MAT matrix(map,map,0,StaticProfile);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
-      matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
+      TEST_THROW( matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0)), std::runtime_error );
 
       RCP<ParameterList> params = parameterList();
       params->set("Optimize Storage",false);
@@ -399,7 +397,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       matrix.resumeFill();
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
-      TEST_NOTHROW( matrix.insertLocalValues ( 0, tuple<LO>(0), tuple<Scalar>(0) ) );
+      TEST_THROW( matrix.insertLocalValues ( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
       TEST_NOTHROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ) );
       TEST_NOTHROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ) );
       TEST_NOTHROW( matrix.setAllToScalar(SZERO)                                   );
@@ -594,8 +592,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     auto map = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
 
     // construct matrix
-    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 0, DynamicProfile);
-    A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ()));
+    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 0, StaticProfile);
+    TEST_THROW(A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ())), std::runtime_error);
     A.fillComplete (map, map);
 
     // construct second matrix using the first matrix's graph

@@ -87,7 +87,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -136,8 +135,8 @@ namespace {
    n-1 [       1 2]
     */
 
-    MAT A(map,4);
-    MAT B(map,4);
+    MAT A(map,4,StaticProfile);
+    MAT B(map,4,StaticProfile);
     A.setObjectLabel("The Matrix");
     A.setObjectLabel("The Other Matrix");
     if (myImageID != numImages-1) { // last image assigns none

@@ -102,7 +102,7 @@ namespace { // (anonymous)
         "Kokkos is not initialized!" );
 
 
-    RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 10));
+    RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 10, Tpetra::StaticProfile));
     const LO NumMyElements = map->getNodeNumElements ();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList ();
 

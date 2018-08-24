@@ -48,7 +48,6 @@
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
-// TODO: add test where dynamic profile initially has no allocation, then entries are added. this will test new view functionality.
 
 namespace Teuchos {
   template <>
@@ -152,7 +151,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -263,14 +261,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const map_type> lclmap = createLocalMapWithNode<LO,GO,Node> (P, comm);
 
     // create the matrix
-    MAT A(rowmap,P,DynamicProfile);
+    MAT A(rowmap,P,StaticProfile);
     for (GO i=0; i<static_cast<GO>(M); ++i) {
       for (GO j=0; j<static_cast<GO>(P); ++j) {
         A.insertGlobalValues( M*myImageID+i, tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
-    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
+    TEST_EQUALITY_CONST( A.getProfileType() == StaticProfile, true );
     A.fillComplete(lclmap,rowmap);
     // build the input multivector X
     MV X(lclmap,numVecs);
@@ -365,7 +363,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<RowMatrix<Scalar,LO,GO,Node> > tri;
     RCP<MAT> tri_crs;
     {
-      tri_crs = rcp(new MAT(rowmap,3) );
+      tri_crs = rcp(new MAT(rowmap,3,StaticProfile) );
       Array<Scalar>  vals(3,ST::one());
       if (myImageID == 0) {
         Array<GO> cols( tuple<GO>(2*myImageID,2*myImageID+1,2*myImageID+2) );
@@ -499,7 +497,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
    n-1 [       1 2]
     */
     size_t myNNZ;
-    MAT A(map,4);
+    MAT A(map,4,StaticProfile);
     A.setObjectLabel("The Matrix");
     MV mveye(map,numImages), mvans(map,numImages), mvres(map,numImages,true);
     mveye.setObjectLabel("mveye");
@@ -589,7 +587,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const map_type> map (new map_type (INVALID, numLocal, 0, comm));
     {
       // create the matrix
-      MAT A(map,1);
+      MAT A(map,1,StaticProfile);
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others it will induce communication
       A.insertGlobalValues(map->getMaxGlobalIndex()+1,tuple<GO>(map->getIndexBase()),tuple<Scalar>(ST::one()));
@@ -597,7 +595,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     {
       // create the matrix
-      MAT A(map,1);
+      MAT A(map,1,StaticProfile);
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others there is nothing
       if (myImageID == numImages-1) {
