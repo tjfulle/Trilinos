@@ -137,12 +137,12 @@ namespace { // (anonymous)
       GRAPH graph(map,1,StaticProfile);
       graph.fillComplete();
     }
-    {
+    /*    {
       // create dynamic-profile graph, fill-complete without inserting
       // (and therefore, without allocating)
       GRAPH graph(map,1,DynamicProfile);
       graph.fillComplete();
-    }
+      }*/
 
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
