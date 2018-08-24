@@ -133,42 +133,36 @@ namespace { // (anonymous)
     // Buffer for storing output of getGlobalRowCopy.
     Teuchos::Array<GO> gblColIndsBuf (maxNumEntPerRow);
 
-    const Tpetra::ProfileType profileTypes[2] =
-      {Tpetra::DynamicProfile, Tpetra::StaticProfile};
-    for (auto profileType_src : profileTypes) {
-      crs_graph_type graph_src (rowMap_src, maxNumEntPerRow, profileType_src);
-      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const GO gblRow = rowMap_src->getGlobalElement (lclRow);
-        // Every row of the source graph gets the same column indices.
-        graph_src.insertGlobalIndices (gblRow, lclNumColMapInds_src, gblColMapInds_src);
+    crs_graph_type graph_src (rowMap_src, maxNumEntPerRow, Tpetra::StaticProfile);
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      const GO gblRow = rowMap_src->getGlobalElement (lclRow);
+      // Every row of the source graph gets the same column indices.
+      graph_src.insertGlobalIndices (gblRow, lclNumColMapInds_src, gblColMapInds_src);
+    }
+    graph_src.fillComplete (domMap, ranMap);
+
+    // Filtering only happens if the target graph has a column
+    // Map, so we must give it a column Map.
+    crs_graph_type graph_tgt (rowMap_tgt, colMap_tgt, maxNumEntPerRow, Tpetra::StaticProfile);
+
+    // mfh 20 Jul 2017: If we clone this test in order to test
+    // CrsMatrix column index filtering, then we should include
+    // both the separate doExport,fillComplete case, and the
+    // exportAndFillComplete combined case.
+    graph_tgt.doExport (graph_src, theExport, Tpetra::INSERT);
+    graph_tgt.fillComplete (domMap, ranMap);
+
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      const GO gblRow = rowMap_tgt->getGlobalElement (lclRow);
+      size_t numEnt = 0; // output argument
+      graph_tgt.getGlobalRowCopy (gblRow, gblColIndsBuf (), numEnt);
+      TEST_EQUALITY( numEnt, static_cast<size_t> (lclNumColMapInds_tgt) );
+      if (numEnt == static_cast<size_t> (lclNumColMapInds_tgt)) {
+	for (LO k = 0; k < static_cast<LO> (numEnt); ++k) {
+	  TEST_EQUALITY( gblColIndsBuf[k], gblColMapInds_tgt[k] );
+	}
       }
-      graph_src.fillComplete (domMap, ranMap);
-
-      for (auto profileType_tgt : profileTypes) {
-        // Filtering only happens if the target graph has a column
-        // Map, so we must give it a column Map.
-        crs_graph_type graph_tgt (rowMap_tgt, colMap_tgt, maxNumEntPerRow, profileType_tgt);
-
-        // mfh 20 Jul 2017: If we clone this test in order to test
-        // CrsMatrix column index filtering, then we should include
-        // both the separate doExport,fillComplete case, and the
-        // exportAndFillComplete combined case.
-        graph_tgt.doExport (graph_src, theExport, Tpetra::INSERT);
-        graph_tgt.fillComplete (domMap, ranMap);
-
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          const GO gblRow = rowMap_tgt->getGlobalElement (lclRow);
-          size_t numEnt = 0; // output argument
-          graph_tgt.getGlobalRowCopy (gblRow, gblColIndsBuf (), numEnt);
-          TEST_EQUALITY( numEnt, static_cast<size_t> (lclNumColMapInds_tgt) );
-          if (numEnt == static_cast<size_t> (lclNumColMapInds_tgt)) {
-            for (LO k = 0; k < static_cast<LO> (numEnt); ++k) {
-              TEST_EQUALITY( gblColIndsBuf[k], gblColMapInds_tgt[k] );
-            }
-          }
-        }
-      } // for each target graph profile type
-    } // for each source graph profile type
+    }
 
     // Make sure that the test succeeded on all processes.
     lclSuccess = success ? 1 : 0;
