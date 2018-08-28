@@ -1,12 +1,13 @@
 ADD_SUBDIRECTORIES(
 #    Laplacian_Epetra
     Laplacian_Tpetra
-    TwoLevelPreconditioner
+    TwoLevelPreconditioner    
 #    InterfaceSets
     Import_Tpetra
     LocalPartitionOfUnityBasis
 #    InterfacePartitionOfUnity
     TwoLevelPreconditionerInputFiles
-     Thyra_Xpetra
-    
+    Thyra_Xpetra
+    Thyra_Xpetra_Prec
+    TwoLevelPreconditionerBlockInputFiles
 )
