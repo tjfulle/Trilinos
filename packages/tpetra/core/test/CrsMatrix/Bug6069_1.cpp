@@ -191,7 +191,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug6069_1, SC, LO, GO, NT)
   *fos << std::endl << "Creating the sparse matrix" << std::endl;
 
   LO nnz=5;
-  RCP<MatrixType> A = rcp (new MatrixType (map, nnz));
+  RCP<MatrixType> A = rcp (new MatrixType (map, nnz, Tpetra::StaticProfile));
 
   ArrayView<const GO> myGlobalElements = map->getNodeElementList();
 
