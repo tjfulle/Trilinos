@@ -205,7 +205,7 @@ namespace {
 
       const size_t maxIndicesPerRow = 3;
       *out << "Creating CrsGraph" << endl;
-      RCP<graph_type> graph = rcp (new graph_type (nonoverlapRowMap, maxIndicesPerRow));
+      RCP<graph_type> graph = rcp (new graph_type (nonoverlapRowMap, maxIndicesPerRow, Tpetra::StaticProfile));
       Array<GO> curIndices (maxIndicesPerRow);
 
       *out << "Filling CrsGraph" << endl;
@@ -278,7 +278,7 @@ namespace {
 
       const size_t maxIndicesPerRow = 3;
       *out << "Creating sparse matrix" << endl;
-      RCP<matrix_type> A_src = rcp (new matrix_type (overlapRowMap, maxIndicesPerRow));
+      RCP<matrix_type> A_src = rcp (new matrix_type (overlapRowMap, maxIndicesPerRow, Tpetra::StaticProfile));
       Array<GO> curIndices (maxIndicesPerRow);
       Array<ST> curValues (maxIndicesPerRow);
 

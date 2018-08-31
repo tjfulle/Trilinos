@@ -82,7 +82,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -146,9 +145,18 @@ namespace {
             grow<=map1->getMaxGlobalIndex();
             ++grow)
     {
-      if (grow == map1->getMinGlobalIndex())      A1->insertGlobalValues(grow, tuple<GO>(grow,grow+1), tuple<SCALAR>(1.0,-1.0));
-      else if (grow == map1->getMaxGlobalIndex()) A1->insertGlobalValues(grow, tuple<GO>(grow-1,grow), tuple<SCALAR>(-1.0,1.0));
-      else                                        A1->insertGlobalValues(grow, tuple<GO>(grow-1,grow,grow+1), tuple<SCALAR>(-1.0,1.0,-1.0));
+      if (grow == map1->getMinGlobalIndex())      
+	A1->insertGlobalValues(grow, 
+			       tuple<GO>(grow,grow+1), 
+			       tuple<SCALAR>(1.0,-1.0));
+      else if (grow == map1->getMaxGlobalIndex()) 
+	A1->insertGlobalValues(grow, 
+			       tuple<GO>(grow-1,grow), 
+			       tuple<SCALAR>(-1.0,1.0));
+      else                                        
+	A1->insertGlobalValues(grow, 
+			       tuple<GO>(grow-1,grow,grow+1), 
+			       tuple<SCALAR>(-1.0,1.0,-1.0));
     }
     // source has global indices, not filled, dynamic profile
     {
@@ -162,8 +170,12 @@ namespace {
       TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
       TEST_EQUALITY_CONST( A2->getCrsGraph()->getNodeAllocationSize(), (size_t)(numLocal*3-2) );
       TEST_EQUALITY( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
-      TEST_NOTHROW( A2->insertGlobalValues(map1->getMaxGlobalIndex(), tuple<GO>(map1->getMinGlobalIndex()), tuple<SCALAR>(1.0)) );
-      TEST_NOTHROW( A2->insertGlobalValues(map1->getMinGlobalIndex(), tuple<GO>(map1->getMaxGlobalIndex()), tuple<SCALAR>(1.0)) );
+      TEST_NOTHROW( A2->insertGlobalValues(map1->getMaxGlobalIndex(), 
+					   tuple<GO>(map1->getMinGlobalIndex()), 
+					   tuple<SCALAR>(1.0)) );
+      TEST_NOTHROW( A2->insertGlobalValues(map1->getMinGlobalIndex(), 
+					   tuple<GO>(map1->getMaxGlobalIndex()), 
+					   tuple<SCALAR>(1.0)) );
       TEST_NOTHROW( A2->fillComplete() );
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+2 );
     }

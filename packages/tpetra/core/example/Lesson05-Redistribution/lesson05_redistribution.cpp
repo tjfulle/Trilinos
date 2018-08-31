@@ -82,8 +82,8 @@ createMatrix (const Teuchos::RCP<const typename CrsMatrixType::map_type>& map)
   // Time the whole scope of this routine, not counting timer lookup.
   TimeMonitor monitor (*timer);
 
-  // Create a Tpetra::Matrix using the Map, with dynamic allocation.
-  RCP<CrsMatrixType> A (new CrsMatrixType (map, 3));
+  // Create a Tpetra::Matrix using the Map, with static allocation.
+  RCP<CrsMatrixType> A (new CrsMatrixType (map, 3, Tpetra::StaticProfile));
 
   // Add rows one at a time.  Off diagonal values will always be -1.
   const scalar_type two    = static_cast<scalar_type> ( 2.0);

@@ -120,7 +120,7 @@ namespace {
     const size_t numVecs = 5;
     RCP<const Tpetra::Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
     // create a matrix, modeled closely on Chris' CrsMatrix unit-tests.
-    RCP<MAT> matrix(new MAT(map, 3));
+    RCP<MAT> matrix(new MAT(map, 3, Tpetra::StaticProfile));
     for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
       if (r == map->getMinAllGlobalIndex()) {
         matrix->insertGlobalValues(r, tuple(r,r+1), tuple(ST::one(),ST::one()) );
