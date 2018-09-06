@@ -132,6 +132,7 @@ void StepperNewmarkImplicitAForm<Scalar>::initialize()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
 }
 
@@ -212,9 +213,9 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
         this->solveImplicitODE(a_init);
 
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-        workingState->setSolutionStatus(Status::PASSED);
+        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
       else
-        workingState->setSolutionStatus(Status::FAILED);
+        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
       Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
@@ -238,9 +239,9 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->setSolutionStatus(Status::PASSED);
+      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
-      workingState->setSolutionStatus(Status::FAILED);
+      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
 
     //solveImplicitODE will return converged solution in a_old.  Copy
     //it here to a_new, the new acceleration.
