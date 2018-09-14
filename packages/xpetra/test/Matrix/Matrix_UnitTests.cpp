@@ -120,10 +120,10 @@ namespace {
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
         Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
      {
-       Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
+       Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal, Xpetra::StaticProfile);
 
        // Test of constructor
-       CrsMatrixWrap op(map,1);
+       CrsMatrixWrap op(map,1,Xpetra::StaticProfile);
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
 
@@ -172,10 +172,10 @@ namespace {
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
         Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
      {
-       Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
+       Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal, Xpetra::StaticProfile);
 
        // Test of constructor
-       CrsMatrixWrap op(map,1);
+       CrsMatrixWrap op(map,1,Xpetra::StaticProfile);
        op.fillComplete();
 
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());

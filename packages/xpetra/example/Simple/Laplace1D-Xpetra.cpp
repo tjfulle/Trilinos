@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
-    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 3);
+    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 3, Xpetra::StaticProfile);
 
     for (size_t i = 0; i < numMyElements; i++) {
       if (myGlobalElements[i] == 0) {

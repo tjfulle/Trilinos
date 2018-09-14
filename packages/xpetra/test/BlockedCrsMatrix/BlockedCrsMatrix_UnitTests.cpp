@@ -158,7 +158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
   Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+    Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3, Xpetra::StaticProfile);
   TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
 
   for (LO i = 0; i < NumMyElements; i++) {
@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
   TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
 
   Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > mat =
-      Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node>(A));
+    Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node>(A));
 
   Teuchos::Array<GO> gids1;
   Teuchos::Array<GO> gids2;
@@ -1311,7 +1311,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReadWriteBlockedMatrix, M, 
   Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+    Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3, Xpetra::StaticProfile);
   TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
 
   for (LO i = 0; i < NumMyElements; i++) {

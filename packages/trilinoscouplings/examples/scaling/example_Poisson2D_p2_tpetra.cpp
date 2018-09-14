@@ -828,7 +828,7 @@ int main(int argc, char *argv[]) {
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
 
-  crs_matrix_type StiffMatrix(globalMapG, 20*numFieldsG);
+  crs_matrix_type StiffMatrix(globalMapG, 20*numFieldsG, Tpetra::StaticProfile);
   RCP<multivector_type> rhsVector = rcp(new multivector_type(globalMapG,1));
   RCP<multivector_type> femCoefficients = rcp(new multivector_type(globalMapG,1));
 
@@ -990,7 +990,7 @@ int main(int argc, char *argv[]) {
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly (auxiliary system)")));
 
-  crs_matrix_type StiffMatrix_aux(globalMapG, 20*numFieldsG_aux);
+  crs_matrix_type StiffMatrix_aux(globalMapG, 20*numFieldsG_aux, Tpetra::StaticProfile);
   RCP<multivector_type> rhsVector_aux = rcp(new multivector_type(globalMapG,1));
 
   desiredWorksetSize = numElems_aux;
@@ -2179,7 +2179,7 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
   int Nelem=P2_elemToNode.dimension(0);
   if(P2_elemToNode.dimension(1) != 9) throw std::runtime_error("Unidentified element type");
   
-  P = rcp(new crs_matrix_type(P2_map,0));
+  P = rcp(new crs_matrix_type(P2_map,0,Tpetra::StaticProfile));
 
   Array<scalar_type> vals1(1);
   Array<global_ordinal_type> cols1(1);
@@ -2227,7 +2227,7 @@ void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNo
   // (see CreateP1MeshFromP2Mesh).  The P2 map is the range map, the P1 auxiliary map is the domain map.
 
   double one = 1.0;
-  P = rcp(new crs_matrix_type(P2_map,1));
+  P = rcp(new crs_matrix_type(P2_map,1,Tpetra::StaticProfile));
 
   //We must keep track of the nodes already encountered.  Inserting more than once will cause
   //the values to be summed.  Using a hashtable would work -- we abuse std::map for this purpose.
@@ -2250,7 +2250,7 @@ void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNo
   P->fillComplete(P1_map_aux,P2_map);
 
   hashTable.clear();
-  R = rcp(new crs_matrix_type(P1_map_aux,1));
+  R = rcp(new crs_matrix_type(P1_map_aux,1,Tpetra::StaticProfile));
   Nelem = P1_elemToNode.dimension(0);
   int nodesPerElem = P1_elemToNode.dimension(1);
   for(int i=0; i<Nelem; ++i) {

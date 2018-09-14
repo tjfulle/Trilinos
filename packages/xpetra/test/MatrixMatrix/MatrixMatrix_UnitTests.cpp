@@ -422,10 +422,10 @@ namespace {
       Teuchos::RCP<MatrixClass> xABt= Teuchos::rcp(new CrsMatrixWrapClass(xABtmat));
       Teuchos::RCP<MatrixClass> xAtBt= Teuchos::rcp(new CrsMatrixWrapClass(xAtBtmat));
 
-      Teuchos::RCP<MatrixClass> yAB= Teuchos::rcp(new CrsMatrixWrapClass(map, 10));
-      Teuchos::RCP<MatrixClass> yAtB= Teuchos::rcp(new CrsMatrixWrapClass(map, 10));
-      Teuchos::RCP<MatrixClass> yABt= Teuchos::rcp(new CrsMatrixWrapClass(map, 10));
-      Teuchos::RCP<MatrixClass> yAtBt= Teuchos::rcp(new CrsMatrixWrapClass(map, 10));
+      Teuchos::RCP<MatrixClass> yAB= Teuchos::rcp(new CrsMatrixWrapClass(map, 10, Xpetra::StaticProfile));
+      Teuchos::RCP<MatrixClass> yAtB= Teuchos::rcp(new CrsMatrixWrapClass(map, 10, Xpetra::StaticProfile));
+      Teuchos::RCP<MatrixClass> yABt= Teuchos::rcp(new CrsMatrixWrapClass(map, 10, Xpetra::StaticProfile));
+      Teuchos::RCP<MatrixClass> yAtBt= Teuchos::rcp(new CrsMatrixWrapClass(map, 10, Xpetra::StaticProfile));
 
       Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
         *xA,

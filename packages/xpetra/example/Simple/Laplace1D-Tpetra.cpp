@@ -71,7 +71,7 @@ int main (int argc, char *argv[])
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
     RCP<const map_type> map = rcp (new map_type (numGlobalElements, indexBase, comm));
 
-    crs_matrix_type A (map, 3);
+    crs_matrix_type A (map, 3, Tpetra::StaticProfile);
 
     Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
     const size_t numMyElements = map->getNodeNumElements ();

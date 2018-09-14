@@ -113,7 +113,7 @@ namespace {
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10, Xpetra::StaticProfile);
 
     LO NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
@@ -165,7 +165,7 @@ namespace {
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3, Xpetra::StaticProfile);
     TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
 
     for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
@@ -261,7 +261,7 @@ namespace {
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3, Xpetra::StaticProfile);
     TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
 
     for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
@@ -351,7 +351,7 @@ namespace {
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3, Xpetra::StaticProfile);
     TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
 
     for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
@@ -469,7 +469,7 @@ namespace {
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10, Xpetra::StaticProfile);
 
     LO NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
@@ -545,7 +545,7 @@ namespace {
     LO nEle = 63;
     RCP<const map_type> map = map_factory_type::Build(lib, nEle, 0, comm);
 
-    RCP<crs_matrix_type> matrix = crs_matrix_factory_type::Build (map, 10);
+    RCP<crs_matrix_type> matrix = crs_matrix_factory_type::Build (map, 10, Xpetra::StaticProfile);
     const LO NumMyElements = map->getNodeNumElements ();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
@@ -780,7 +780,7 @@ namespace {
     }
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build (map, 10);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build (map, 10, Xpetra::StaticProfile);
 
     LO NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
@@ -1110,7 +1110,7 @@ namespace {
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10, Xpetra::StaticProfile);
 
     LO NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
@@ -1167,7 +1167,7 @@ namespace {
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
     RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10, Xpetra::StaticProfile);
 
     LO NumMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
