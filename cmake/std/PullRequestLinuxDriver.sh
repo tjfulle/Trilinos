@@ -20,9 +20,8 @@
 # and we get the correct behavior for PR testing.
 #
 
-export https_proxy=http://wwwproxy.sandia.gov:80
+export https_proxy=https://wwwproxy.sandia.gov:80
 export http_proxy=http://wwwproxy.sandia.gov:80
-no_proxy='localhost,localnets,.sandia.gov,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 whoami
 which -a env
@@ -96,12 +95,24 @@ fi
 
 git remote -v
 
-git fetch source_remote ${TRILINOS_SOURCE_BRANCH:?}
-ierror=$?
-if [[ $ierror != 0 ]]; then
-  echo "Source remote fetch failed. The error code was: $ierror"
-  exit $ierror
-fi
+num_retries=3
+
+for i in `seq ${num_retries}`
+do
+  git fetch source_remote ${TRILINOS_SOURCE_BRANCH:?}
+  ierror=$?
+  if [[ $ierror != 0 ]]; then
+    echo "Source remote fetch failed. The error code was: $ierror"
+    if i != num_retries
+    then
+      echo "retry $i"
+    else
+      exit $ierror
+    fi
+  else
+    break
+  fi
+done
 
 git fetch origin ${TRILINOS_TARGET_BRANCH:?}
 ierror=$?
@@ -178,14 +189,6 @@ elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ] ; then
     echo "There was an issue loading the gcc environment. The error code was: $ierror"
     exit $ierror
   fi
-elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ] ; then
-  # TODO: Update this to use a 4.9.3 SERIAL testing environment script.
-  source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC4.9.3TestingEnvSERIAL.sh 
-  ierror=$?
-  if [[ $ierror != 0 ]]; then
-    echo "There was an issue loading the gcc environment. The error code was: $ierror"
-    exit $ierror
-  fi
 elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
   source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestIntel17.0.1TestingEnv.sh
   ierror=$?
@@ -251,9 +254,6 @@ else
     CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
   elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]; then
     CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
-  elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ]; then
-    # TODO: Update this to use a 4.9.3 SERIAL testing environment script.
-    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake
   fi
 fi
 
@@ -263,7 +263,7 @@ ctest -S simple_testing.cmake \
   -Dskip_update_step=ON \
   -Ddashboard_model=Experimental \
   -Ddashboard_track="${CDASH_TRACK:?}" \
-  -DPARALLEL_LEVEL=18 \
+  -DPARALLEL_LEVEL=22 \
   -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
   -Dconfigure_script=${TRILINOS_DRIVER_SRC_DIR}/cmake/std/${CONFIG_SCRIPT:?} \
   -Dpackage_enables=../packageEnables.cmake \
