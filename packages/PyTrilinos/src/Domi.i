@@ -432,36 +432,6 @@ import numpy
   }
 }
 %include "Domi_MDMap.hpp"
-#ifdef HAVE_TPETRA
-%extend Domi::MDMap
-{
-  // This extension returns a Tpetra::Classes::Map instead of a
-  // Tpetra::Map, to help SWIG with type checking
-  Teuchos::RCP< const Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
-                                            PYTRILINOS_GLOBAL_ORD,
-                                            DefaultNodeType > >
-  getTpetraMap(bool withCommPad=true)
-  {
-    return self->template getTpetraMap< PYTRILINOS_LOCAL_ORD,
-                                        PYTRILINOS_GLOBAL_ORD,
-                                        DefaultNodeType >(withCommPad);
-  }
-
-  // This extension returns a Tpetra::Classes::Map instead of a
-  // Tpetra::Map, to help SWIG with type checking
-  Teuchos::RCP< const Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
-                                            PYTRILINOS_GLOBAL_ORD,
-                                            DefaultNodeType > >
-  getTpetraAxisMap(int axis,
-                   bool withCommPad=true)
-  {
-    return self->template getTpetraAxisMap< PYTRILINOS_LOCAL_ORD,
-                                            PYTRILINOS_GLOBAL_ORD,
-                                            DefaultNodeType >(axis,
-                                                              withCommPad);
-  }
-}
-#endif
 
 ///////////////////////////
 // Domi MDVector support //
