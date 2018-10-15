@@ -26,6 +26,11 @@ export http_proxy=http://wwwproxy.sandia.gov:80
 whoami
 which -a env
 
+echo -e ""
+echo -e "Jenkins Environment Variables:"
+echo -e "- JOB_BASE_NAME: ${JOB_BASE_NAME}"
+echo -e ""
+
 ## Rather than do proper option handling right now I am just going to
 ##  test that all these environment variables are set.  Because getopt ;->
 : ${TRILINOS_SOURCE_REPO:?}
