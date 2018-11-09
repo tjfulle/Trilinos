@@ -255,7 +255,7 @@ namespace MueLu {
                 graph.GetDomainMap()->getComm(),
                 graph.GetDomainMap()->getNode());
     }
-    myGraph = CrsGraphFactory::Build(graph.GetDomainMap(),colMap,nnzOnRow,Xpetra::DynamicProfile);
+    myGraph = CrsGraphFactory::Build(graph.GetDomainMap(),colMap,nnzOnRow,Xpetra::StaticProfile);
 
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
       myGraph->insertLocalIndices(nodeIdx, colIndex(rowPtr[nodeIdx],nnzOnRow[nodeIdx]) );

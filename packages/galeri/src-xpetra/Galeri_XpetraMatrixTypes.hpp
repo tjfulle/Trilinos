@@ -103,7 +103,7 @@ namespace Galeri {
     Teuchos::RCP<Matrix>
     Identity(const Teuchos::RCP<const Map>& map, const Scalar a)
     {
-      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
+      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map, Matrix>::Build(map, 1);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -126,7 +126,7 @@ namespace Galeri {
             const GlobalOrdinal nx,                            // note: nx unused
             const Scalar a, const Scalar b, const Scalar c)
     {
-      Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 3);
+      Teuchos::RCP<Matrix>mtx = MatrixTraits<Map,Matrix>::Build(map, 3);
 
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();

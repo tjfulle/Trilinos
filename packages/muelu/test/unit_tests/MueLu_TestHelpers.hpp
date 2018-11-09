@@ -213,7 +213,7 @@ namespace MueLuTests {
 
         RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-        Teuchos::RCP<Matrix> mtx = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(dofMap, 3);
+        Teuchos::RCP<Matrix> mtx = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(dofMap, 3, Xpetra::StaticProfile);
 
         LocalOrdinal NumMyElements = dofMap->getNodeNumElements();
         Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = dofMap->getNodeElementList();
@@ -628,7 +628,7 @@ namespace MueLuTests {
         // create diagonal blocks
         std::vector<Teuchos::RCP<CrsMatrix> > blocks(noBlocks,Teuchos::null);
         for (int it=0; it<noBlocks; it++) {
-          blocks[it] = CrsMatrixFactory::Build(maps[it], 1);
+          blocks[it] = CrsMatrixFactory::Build(maps[it], 1, Xpetra::StaticProfile);
 
           LocalOrdinal NumMyElements = maps[it]->getNodeNumElements();
           Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = maps[it]->getNodeElementList();
@@ -645,7 +645,7 @@ namespace MueLuTests {
         Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(fullmap, maps, false));
 
         // build blocked operator
-        Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,1));
+        Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,1, Xpetra::StaticProfile));
 
         for (int it=0; it<noBlocks; it++) {
           Teuchos::RCP<CrsMatrixWrap> csrwrap =
@@ -676,7 +676,7 @@ namespace MueLuTests {
         // create diagonal blocks
         std::vector<Teuchos::RCP<CrsMatrix> > blocks(noBlocks,Teuchos::null);
         for (int it=0; it<noBlocks; it++) {
-          blocks[it] = CrsMatrixFactory::Build(maps[it], 1);
+          blocks[it] = CrsMatrixFactory::Build(maps[it], 1, Xpetra::StaticProfile);
 
           LocalOrdinal NumMyElements = maps[it]->getNodeNumElements();
           Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = maps[it]->getNodeElementList();
@@ -697,7 +697,7 @@ namespace MueLuTests {
         Teuchos::RCP<const MapExtractor > doMapExtractor =
             Teuchos::rcp(new MapExtractor(maps[0], maps, true));
         // build blocked operator
-        Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,1));
+        Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,1, Xpetra::StaticProfile));
 
         for (int it=0; it<noBlocks; it++) {
           Teuchos::RCP<CrsMatrixWrap> csrwrap = Teuchos::rcp(new CrsMatrixWrap(blocks[it]));
@@ -734,7 +734,7 @@ namespace MueLuTests {
         Teuchos::RCP<const MapExtractor > doMapExtractor =
             Teuchos::rcp(new MapExtractor(maps[0], maps, true));
         // build blocked operator
-        Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,5));
+        Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,5, Xpetra::StaticProfile));
         bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(0),A00);
         bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(1),A01);
         bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(0),A10);

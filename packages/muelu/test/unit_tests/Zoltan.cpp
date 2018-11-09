@@ -104,7 +104,8 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, 0/*indexBase*/, comm);
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
-    RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 1)); // Force underlying linear algebra library to allocate more
+    RCP<Matrix> A = rcp(new CrsMatrixWrap(map, numGlobalElements, Xpetra::StaticProfile)); 
+    // Force underlying linear algebra library to allocate more
     // memory on the fly.  While not super efficient, this
     // ensures that no zeros are being stored.  Thus, from
     // Zoltan's perspective the matrix is imbalanced.
