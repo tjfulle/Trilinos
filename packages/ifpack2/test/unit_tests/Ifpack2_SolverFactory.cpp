@@ -72,10 +72,11 @@ namespace {
     // are the same.  Giving a column Map to CrsMatrix's constructor
     // lets us use local indices.
     RCP<const map_type> colMap = rowMap;
-    const size_t maxNumEntPerRow = 1;
+    const size_t maxNumEntPerRow = gblNumRows; //worst case?
     RCP<MAT> A (new MAT (rowMap, colMap, maxNumEntPerRow, Tpetra::StaticProfile));
 
     if (rowMap->getNodeNumElements () != 0) {
+      fprintf(stderr, "node num elts: %lu\n", rowMap->getNodeNumElements());
       Teuchos::Array<SC> vals (1);
       Teuchos::Array<LO> inds (1);
       for (LO lclRow = rowMap->getMinLocalIndex ();
@@ -165,8 +166,9 @@ namespace {
     out << "Set matrix" << endl;
     solver->setMatrix (A);
 
-    out << "Compute symbolic and numeric factorization" << endl;
+    out << "Compute symbolic factorization" << endl;
     solver->symbolic ();
+    out << "Compute numeric factorization" << endl;
     solver->numeric ();
 
     out << "Apply solver to \"solve\" AX=B for X.  Ifpack2 only promises "

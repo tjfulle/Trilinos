@@ -505,8 +505,8 @@ void ILUT<MatrixType>::compute ()
     const scalar_type one  = STS::one ();
 
     const local_ordinal_type myNumRows = A_local_->getNodeNumRows ();
-    L_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
-    U_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
+    L_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), A_local_->getGlobalNumCols()));
+    U_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), A_local_->getGlobalNumCols()));
 
     // CGB: note, this caching approach may not be necessary anymore
     // We will store ArrayView objects that are views of the rows of U, so that

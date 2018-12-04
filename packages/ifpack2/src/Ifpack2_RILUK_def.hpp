@@ -525,9 +525,12 @@ void RILUK<MatrixType>::initialize ()
         // number of elements in each row of A_local, so that we can
         // create A_local_crs_nc using static profile.  The code below is
         // correct but potentially slow.
+	
         RCP<crs_matrix_type> A_local_crs_nc =
           rcp (new crs_matrix_type (A_local_->getRowMap (),
-                                    A_local_->getColMap (), 0));
+                                    A_local_->getColMap (), 
+				    A_local_->getNodeMaxNumRowEntries(),
+				    Tpetra::StaticProfile));
         // FIXME (mfh 24 Jan 2014) This Import approach will only work
         // if A_ has a one-to-one row Map.  This is generally the case
         // with matrices given to Ifpack2.

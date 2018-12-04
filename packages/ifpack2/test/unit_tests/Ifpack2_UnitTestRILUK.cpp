@@ -99,7 +99,9 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
   //Construct a nondiagonal matrix.  It's not tridiagonal because of processor boundaries.
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two = one + one;
-  RCP<crs_matrix_type > A = Teuchos::rcp(new crs_matrix_type(map, 1));
+  RCP<crs_matrix_type > A = Teuchos::rcp(new crs_matrix_type(map, 
+							     numElementsPerProc, 
+							     Tpetra::StaticProfile));
   Teuchos::Array<GlobalOrdinal> col(3);
   Teuchos::Array<Scalar>        val(3);
   size_t numLocalElts = map->getNodeNumElements();
