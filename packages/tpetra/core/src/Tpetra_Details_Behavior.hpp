@@ -168,6 +168,12 @@ public:
   ///        "CrsGraph::insertLocalIndices".
   static bool timing (const char name[]);
 
+  /// \brief Disable timing, programatically
+  static void disable_timing();
+
+  /// \brief Enable timing, programatically
+  static void enable_timing();
+
   /// \brief Whether to assume that MPI is CUDA aware.
   ///
   /// An MPI implementation is "CUDA aware" if it can accept CUDA
@@ -216,12 +222,15 @@ public:
 
   /// \brief the threshold for transitioning from device to host
   ///
-  /// If the number of elements in the multivector does not exceed this 
+  /// If the number of elements in the multivector does not exceed this
   /// threshold and the data is on host, then run the calculation on
   /// host.  Otherwise, run on device.
   /// By default this is 10000, but may be altered by the environment
   /// variable TPETRA_VECTOR_DEVICE_THRESHOLD
   static size_t multivectorKernelLocationThreshold ();
+
+  /// \brief Unpack rows of a matrix using hierarchical unpacking
+  static bool hierarchicalUnpack ();
 
   /// \brief Use Teuchos::Timer in Tpetra::ProfilingRegion
   ///
