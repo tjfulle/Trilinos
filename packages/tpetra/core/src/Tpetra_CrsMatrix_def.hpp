@@ -4733,9 +4733,9 @@ namespace Tpetra {
       os << *prefix << endl;
       std::cerr << os.str ();
     }
-    Details::ProfilingRegion region(
-      "Tpetra::CrsMatrix::fillCompete",
-      "fillCompete");
+    Details::ProfilingRegion r(
+      "Tpetra::CrsMatrix::fillComplete overall",
+      "fillComplete");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! this->isFillActive () || this->isFillComplete (), std::runtime_error,
@@ -4747,8 +4747,8 @@ namespace Tpetra {
     // Read parameters from the input ParameterList.
     //
     {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
+      Details::ProfilingRegion r0(
+	"Tpetra::CrsMatrix::fillComplete ParamList",
 	"ParameterList");
 
       // If true, the caller promises that no process did nonlocal
@@ -4798,8 +4798,8 @@ namespace Tpetra {
       }
     }
     if (this->isStaticGraph ()) {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
+      Details::ProfilingRegion r1(
+	"Tpetra::CrsMatrix::fillComplete isStaticGraph",
 	"isStaticGraph");
       // FIXME (mfh 14 Nov 2016) In order to fix #843, I enable the
       // checks below only in debug mode.  It would be nicer to do a
@@ -4850,81 +4850,111 @@ namespace Tpetra {
       this->fillLocalMatrix (params);
     }
     else {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
+      Details::ProfilingRegion r2(
+	"Tpetra::CrsMatrix::fillComplete isNotStaticGraph",
 	"isNotStaticGraph");
       // Set the graph's domain and range Maps.  This will clear the
       // Import if the domain Map has changed (is a different
       // pointer), and the Export if the range Map has changed (is a
       // different pointer).
-      this->myGraph_->setDomainRangeMaps (domainMap, rangeMap);
-
+      {
+	Details::ProfilingRegion r3(
+	  "Tpetra::CrsMatrix::fillComplete setDomainRangeMaps",
+	  "setDomainRangeMaps");
+	
+	this->myGraph_->setDomainRangeMaps (domainMap, rangeMap);
+      }
       // Make the graph's column Map, if necessary.
+      const bool mustBuildColMap = ! this->hasColMap();
       Teuchos::Array<int> remotePIDs (0);
-      const bool mustBuildColMap = ! this->hasColMap ();
-      if (mustBuildColMap) {
-        this->myGraph_->makeColMap (remotePIDs);
+
+      {
+	Details::ProfilingRegion r4(
+	  "Tpetra::CrsMatrix::fillComplete mustBuildColMap",
+	  "mustBuildColMap");
+	if (mustBuildColMap) {
+	  this->myGraph_->makeColMap (remotePIDs);
+	}
       }
 
       // Make indices local, if necessary.  The method won't do
       // anything if the graph is already locally indexed.
-      const std::pair<size_t, std::string> makeIndicesLocalResult =
-        this->myGraph_->makeIndicesLocal(verbose);
-      // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along
-      // the error state to makeImportExport or
-      // computeGlobalConstants, which may do all-reduces and thus may
-      // have the opportunity to communicate that error state.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (makeIndicesLocalResult.first != 0, std::runtime_error,
-         makeIndicesLocalResult.second);
+      {
+	Details::ProfilingRegion r5(
+	  "Tpetra::CrsMatrix::fillComplete makeIndicesLocal",
+	  "makeIndicesLocal");
+	const std::pair<size_t, std::string> makeIndicesLocalResult =
+	  this->myGraph_->makeIndicesLocal(verbose);
+
+	// TODO (mfh 20 Jul 2017) Instead of throwing here, pass along
+	// the error state to makeImportExport or
+	// computeGlobalConstants, which may do all-reduces and thus may
+	// have the opportunity to communicate that error state.
+	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+	  (makeIndicesLocalResult.first != 0, std::runtime_error,
+	   makeIndicesLocalResult.second);
+      }
 
       const bool sorted = this->myGraph_->isSorted ();
       const bool merged = this->myGraph_->isMerged ();
-      this->sortAndMergeIndicesAndValues (sorted, merged);
+      {
+	Details::ProfilingRegion r6(
+	  "Tpetra::CrsMatrix::fillComplete sortAndMergeIndicesAndValues",
+	  "sortAndMergeIndicesAndValues");
 
+	this->sortAndMergeIndicesAndValues (sorted, merged);
+      }
       // Make Import and Export objects, if they haven't been made
       // already.  If we made a column Map above, reuse information
       // from that process to avoid communiation in the Import setup.
-      this->myGraph_->makeImportExport (remotePIDs, mustBuildColMap);
+      {
+	Details::ProfilingRegion r7(
+	  "Tpetra::CrsMatrix::fillComplete makeImportExport",
+	  "makeImportExport");
 
+	this->myGraph_->makeImportExport (remotePIDs, mustBuildColMap);
+      }
       // The matrix _does_ own the graph, so fill the local graph at
       // the same time as the local matrix.
-      this->fillLocalGraphAndMatrix (params);
+      {
+	Details::ProfilingRegion r8(
+	  "Tpetra::CrsMatrix::fillComplete fillLocalGraphAndMatrix",
+	  "fillLocalGraphAndMatrix");
 
+	this->fillLocalGraphAndMatrix (params);
+      }
       const bool callGraphComputeGlobalConstants = params.get () == nullptr ||
         params->get ("compute global constants", true);
       const bool computeLocalTriangularConstants = params.get () == nullptr ||
         params->get ("compute local triangular constants", true);
       if (callGraphComputeGlobalConstants) {
+	Details::ProfilingRegion r9(
+	  "Tpetra::CrsMatrix::fillComplete computeGlobalConstants",
+	  "computeGlobalConstants");
+
         this->myGraph_->computeGlobalConstants (computeLocalTriangularConstants);
       }
       else {
+	Details::ProfilingRegion r10(
+	  "Tpetra::CrsMatrix::fillComplete computeLocalConstants",
+	  "computeLocalConstants");
+
         this->myGraph_->computeLocalConstants (computeLocalTriangularConstants);
       }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
     }
 
-    {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
-	"callComputeGlobalConstamnts");
-      const bool callComputeGlobalConstants = params.get () == nullptr ||
-	params->get ("compute global constants", true);
-      if (callComputeGlobalConstants) {
-	this->computeGlobalConstants ();
-      }
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    if (callComputeGlobalConstants) {
+      this->computeGlobalConstants ();
     }
 
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
     this->fillComplete_ = true; // Now we're fill complete!
-    {
-      Details::ProfilingRegion region(
-	"Tpetra::CrsMatrix::fillCompete",
-	"checkInternalState");
-      this->checkInternalState ();
-    }
+    this->checkInternalState ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

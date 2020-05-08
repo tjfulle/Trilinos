@@ -1147,22 +1147,49 @@ int Epetra_CrsMatrix::FillComplete(bool OptimizeDataStorage) {
 int Epetra_CrsMatrix::FillComplete(const Epetra_Map& domain_map,
            const Epetra_Map& range_map, bool OptimizeDataStorage)
 {
+  using Teuchos::TimeMonitor;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  Teuchos::RCP<TimeMonitor> tm0 = 
+    rcp(new TimeMonitor(*TimeMonitor::getNewTimer("epetra::FillComplete")));
   int returnValue = 0;
 
-  if (Graph_.Filled()) {
-    if (!constructedWithFilledGraph_ && !matrixFillCompleteCalled_) {
-      returnValue = 2;
+  {
+    Teuchos::RCP<TimeMonitor> tm = 
+      rcp(new TimeMonitor(*TimeMonitor::getNewTimer("epetra::FillComplete Graph_.filled()")));
+    if (Graph_.Filled()) {
+      if (!constructedWithFilledGraph_ && !matrixFillCompleteCalled_) {
+	returnValue = 2;
+      }
     }
   }
 
   if (!StaticGraph()) {
+    Teuchos::RCP<TimeMonitor> tm = 
+      rcp(new TimeMonitor(*TimeMonitor::getNewTimer("epetra::FillComplete Graph_.MakeIndicesLocal")));
+
     if (Graph_.MakeIndicesLocal(domain_map, range_map) < 0) {
       return(-1);
     }
   }
-  SortEntries();  // Sort column entries from smallest to largest
-  MergeRedundantEntries(); // Get rid of any redundant index values
+
+  {
+    Teuchos::RCP<TimeMonitor> tm = 
+      rcp(new TimeMonitor(*TimeMonitor::getNewTimer("epetra::FillComplete SortEntries()")));
+
+    SortEntries();  // Sort column entries from smallest to largest
+  }
+  {
+    Teuchos::RCP<TimeMonitor> tm = 
+      rcp(new TimeMonitor(*TimeMonitor::getNewTimer("epetra::FillComplete MergeRedundantEntries()")));
+
+    MergeRedundantEntries(); // Get rid of any redundant index values
+  }
   if (!StaticGraph()) {
+    Teuchos::RCP<TimeMonitor> tm = 
+      rcp(new TimeMonitor(*TimeMonitor::getNewTimer("epetra::FillComplete notStaticGraphFillComplete")));
+
     if (Graph_.FillComplete(domain_map, range_map) < 0) {
       return(-2);
     }
@@ -1171,6 +1198,9 @@ int Epetra_CrsMatrix::FillComplete(const Epetra_Map& domain_map,
   matrixFillCompleteCalled_ = true;
 
   if (squareFillCompleteCalled_) {
+    Teuchos::RCP<TimeMonitor> tm = 
+      rcp(new TimeMonitor(*TimeMonitor::getNewTimer("epetra::FillComplete squareFillComplete()")));
+
     if (DomainMap().NumGlobalElements64() != RangeMap().NumGlobalElements64()) {
       returnValue = 3;
     }

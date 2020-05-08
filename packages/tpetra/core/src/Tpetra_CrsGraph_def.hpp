@@ -4802,25 +4802,35 @@ namespace Tpetra {
     // Map after fillComplete.  For now, the column Map is fixed
     // after the first fillComplete call.
     if (importer_.is_null ()) {
+      ProfilingRegion r0 ("Tpetra::CrsGraph::MakeImportExport importer_.is_null",
+			  "importerIsNull");
       // Create the Import instance if necessary.
       if (domainMap_ != colMap_ && (! domainMap_->isSameAs (*colMap_))) {
         if (params.is_null () || ! params->isSublist ("Import")) {
           if (useRemotePIDs) {
+	    ProfilingRegion r1 ("Tpetra::CrsGraph::MakeImportExport importer_.is_null",
+				"useRemotePIDs");
             importer_ = rcp (new import_type (domainMap_, colMap_, remotePIDs));
           }
           else {
+	    ProfilingRegion r2 ("Tpetra::CrsGraph::MakeImportExport importer_.is_null",
+				"!useRemotePIDs");
             importer_ = rcp (new import_type (domainMap_, colMap_));
           }
         }
         else {
           RCP<ParameterList> importSublist = sublist (params, "Import", true);
           if (useRemotePIDs) {
+	    ProfilingRegion r3 ("Tpetra::CrsGraph::MakeImportExport !importer_.is_null",
+				"useRemotePIDs");
             RCP<import_type> newImp =
               rcp (new import_type (domainMap_, colMap_, remotePIDs,
                                     importSublist));
             importer_ = newImp;
           }
           else {
+	    ProfilingRegion r4 ("Tpetra::CrsGraph::MakeImportExport !importer_.is_null",
+				"!useRemotePIDs");
             importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
           }
         }
@@ -4833,9 +4843,13 @@ namespace Tpetra {
       // Create the Export instance if necessary.
       if (rangeMap_ != rowMap_ && ! rangeMap_->isSameAs (*rowMap_)) {
         if (params.is_null () || ! params->isSublist ("Export")) {
+	  ProfilingRegion r5 ("Tpetra::CrsGraph::MakeImportExport exporter_.is_null0",
+			      "noExportSublist");
           exporter_ = rcp (new export_type (rowMap_, rangeMap_));
         }
         else {
+	  ProfilingRegion r6 ("Tpetra::CrsGraph::MakeImportExport exporter_.is_null1",
+			      "noExportSublist");
           RCP<ParameterList> exportSublist = sublist (params, "Export", true);
           exporter_ = rcp (new export_type (rowMap_, rangeMap_, exportSublist));
         }
