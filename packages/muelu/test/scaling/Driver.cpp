@@ -360,7 +360,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
     equilibrateMatrix(A,equilibrate);
   }
 #endif
-
+  bool cont = A->getRowMap()->isContiguous();
+  if (cont)
+    galeriStream << "rowMap is contiguous" << endl;
+  else
+    galeriStream << "rowMap is disjoint" << endl;
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
     numReruns = paramList.get<int>("number of reruns");
